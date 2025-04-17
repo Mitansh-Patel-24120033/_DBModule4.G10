@@ -1,0 +1,10 @@
+# Core libraries for the assignment
+matplotlib
+graphviz
+
+# Optional, but often useful with matplotlib
+numpy
+
+# Optional: For memory profiling (if you choose to implement it)
+# psutil
+# memory_profiler
