@@ -1,0 +1,143 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h2>Table: {{ table_name }}</h2>
+
+<div class="row my-4">
+    <div class="col-md-8">
+        <!-- Data Table -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Table Data</h5>
+            </div>
+            <div class="card-body">
+                {% if data %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Key</th>
+                                    <th>Value</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key, value in data %}
+                                    <tr>
+                                        <td>{{ key }}</td>
+                                        <td>
+                                            <pre>{{ value | tojson(indent=2) }}</pre>
+                                        </td>
+                                        <td>
+                                            <form action="{{ url_for('delete_record', table_name=table_name) }}" method="post" class="d-inline"
+                                                  onsubmit="return confirm('Delete this record?');">
+                                                <input type="hidden" name="key" value="{{ key }}">
+                                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No data in this table yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Operations Panel -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Insert Record</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('insert_record', table_name=table_name) }}" method="post">
+                    <div class="mb-3">
+                        <label for="key" class="form-label">Key</label>
+                        <input type="text" class="form-control" id="key" name="key" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="value" class="form-label">Value (JSON)</label>
+                        <textarea class="form-control" id="value" name="value" rows="3" required>{}</textarea>
+                        <div class="form-text">Enter a valid JSON object</div>
+                    </div>
+                    <button type="submit" class="btn btn-success">Insert</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">Update Record</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('update_record', table_name=table_name) }}" method="post">
+                    <div class="mb-3">
+                        <label for="update_key" class="form-label">Key</label>
+                        <input type="text" class="form-control" id="update_key" name="key" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="update_value" class="form-label">New Value (JSON)</label>
+                        <textarea class="form-control" id="update_value" name="value" rows="3" required>{}</textarea>
+                        <div class="form-text">Enter a valid JSON object</div>
+                    </div>
+                    <button type="submit" class="btn btn-warning">Update</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Search</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('search_record', table_name=table_name) }}" method="post">
+                    <div class="mb-3">
+                        <label for="search_key" class="form-label">Key</label>
+                        <input type="text" class="form-control" id="search_key" name="key" required>
+                    </div>
+                    <button type="submit" class="btn btn-info">Search</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Range Query</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('range_query', table_name=table_name) }}" method="post">
+                    <div class="mb-3">
+                        <label for="start_key" class="form-label">Start Key</label>
+                        <input type="text" class="form-control" id="start_key" name="start_key" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="end_key" class="form-label">End Key</label>
+                        <input type="text" class="form-control" id="end_key" name="end_key" required>
+                    </div>
+                    <button type="submit" class="btn btn-secondary">Execute Range Query</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- B+ Tree Visualization -->
+{% if viz_image %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">B+ Tree Visualization</h5>
+    </div>
+    <div class="card-body tree-visualization">
+        <img src="{{ url_for('static', filename=viz_image.replace('static/', '')) }}" alt="B+ Tree Visualization">
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Tables</a>
+</div>
+{% endblock %} 

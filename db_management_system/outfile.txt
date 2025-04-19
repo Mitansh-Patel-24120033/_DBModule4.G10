@@ -1,0 +1,98 @@
+A bplustree.py
+This appendix provides the boiler plate code for the bplustree.py. There may be other functions that are required, implement them accordingly.
+1 def search ( self , key ):
+2	# Search for a key in the B+ tree . Return associated value if found , else None
+.
+3	# Traverse from root to appropriate leaf node .
+4	pass
+5
+6 def insert( self , key , value ):
+7	"""
+8	Insert  key - value  pair  into  the  B+  tree .
+9	Handle root splitting if necessary .
+10	Maintain  sorted  order  and  balance  properties.
+11	"""
+12	pass
+13
+14 def _insert_non_full ( self , node , key , value ):
+15	# Recursive  helper to insert into a non - full node .
+16	# Split child nodes if they become full during insertion .
+17	pass
+18
+19 def _split_child ( self , parent , index ):
+20	"""
+21	Split parent 's child at given index .
+22	For leaves: preserve linked list structure and copy middle key to parent.
+23	For internal nodes: promote middle key and split children .
+24	"""
+25	pass
+26
+27 def  delete ( self , key ):
+28	"""
+29	Delete key from the B+ tree .
+30	Handle  underflow  by  borrowing  from  siblings  or  merging  nodes.
+31	Update root if it becomes empty .
+32	Return True if deletion succeeded , False otherwise .
+33	"""
+34	pass
+35
+36 def _delete ( self , node , key ):
+37	#  Recursive  helper  for  deletion . Handle  leaf  and  internal  nodes.
+38	#  Ensure  all  nodes  maintain  minimum  keys  after  deletion .
+39	pass
+40
+41 def _fill_child ( self , node , index ):
+42		# Ensure child at given index has enough keys by borrowing from siblings or merging .
+43	pass
+44
+45 def _borrow_from_prev ( self , node , index ):
+46	# Borrow a key from the left sibling to prevent underflow .
+47	pass
+48
+49 def _borrow_from_next ( self , node , index ):
+50	# Borrow a key from the right sibling to prevent underflow .
+51	pass
+52
+
+
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+
+82
+Listing 1: Required B+ Tree methods
+
+B BruteForceDB
+This appendix provides the Python code for the BruteForceDB class, which serves as a baseline for performance comparison against the B+ Tree. It uses a simple list to store keys and performs operations through linear iteration.
+
+1
+2class  Brute Force DB :
+def   init  ( self):3self. data = []45definsert( self ,  key ):6self. data . append ( key )78defsearch ( self ,  key ):9return key in self. data1011defdelete ( self ,  key ):12if key in self. data :13self. data . remove ( key )1415defrange_query ( self , start , end ):16return [ k for k in self. data if start <= k <= end ]Listing 2: BruteForceDB Class (bruteforce.py)
+
+

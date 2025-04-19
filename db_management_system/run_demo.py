@@ -140,112 +140,220 @@ def demonstrate_tables():
         print("Cleaned up demo database file.")
 
 def run_performance_comparison():
-    """Run a simple performance comparison between B+ Tree and BruteForceDB."""
+    """Run a comprehensive performance comparison between B+ Tree and BruteForceDB."""
     print("\n=== Performance Comparison: B+ Tree vs Brute Force ===")
     
-    # Set up data structures
-    bplus_tree = BPlusTree(order=10)
-    brute_force = BruteForceDB()
+    # Test with different set sizes
+    set_sizes = [50, 100, 200, 500]
     
-    # Generate test data
-    data_size = 1000
-    keys = random.sample(range(data_size * 5), data_size)
-    values = [f"value_{k}" for k in keys]
+    # Store results for plotting
+    results = {
+        'sizes': set_sizes,
+        'bplus_insert': [],
+        'brute_insert': [],
+        'bplus_search': [],
+        'brute_search': [],
+        'bplus_delete': [],
+        'brute_delete': [],
+        'bplus_range': [],
+        'brute_range': [],
+        'bplus_memory': [],
+        'brute_memory': []
+    }
     
-    # Compare insertion
-    print("\nComparing insertion performance:")
-    
-    start_time = time.time()
-    for i, key in enumerate(keys):
-        bplus_tree.insert(key, values[i])
-    bplus_insert_time = time.time() - start_time
-    print(f"B+ Tree insertion time: {bplus_insert_time:.6f} seconds")
-    
-    start_time = time.time()
-    for i, key in enumerate(keys):
-        brute_force.insert(key, values[i])
-    brute_insert_time = time.time() - start_time
-    print(f"Brute Force insertion time: {brute_insert_time:.6f} seconds")
-    
-    # Visualize the performance B+ tree
-    try:
-        os.makedirs("visualizations", exist_ok=True)
-        bplus_tree.visualize_tree("visualizations/performance_bplus_tree")
-        print("\nPerformance B+ Tree visualization saved to visualizations/performance_bplus_tree.png")
-    except Exception as e:
-        print(f"\nError visualizing performance B+ tree: {e}")
-    
-    # Compare search
-    print("\nComparing search performance:")
-    search_keys = random.sample(keys, 100)
-    
-    start_time = time.time()
-    for key in search_keys:
-        bplus_tree.search(key)
-    bplus_search_time = time.time() - start_time
-    print(f"B+ Tree search time: {bplus_search_time:.6f} seconds")
-    
-    start_time = time.time()
-    for key in search_keys:
-        brute_force.search(key)
-    brute_search_time = time.time() - start_time
-    print(f"Brute Force search time: {brute_search_time:.6f} seconds")
-    
-    # Compare range query
-    print("\nComparing range query performance:")
-    range_start = data_size // 4
-    range_end = range_start + data_size // 2
-    
-    start_time = time.time()
-    bplus_result = bplus_tree.range_query(range_start, range_end)
-    bplus_range_time = time.time() - start_time
-    print(f"B+ Tree range query time: {bplus_range_time:.6f} seconds, found {len(bplus_result)} results")
-    
-    start_time = time.time()
-    brute_result = brute_force.range_query(range_start, range_end)
-    brute_range_time = time.time() - start_time
-    print(f"Brute Force range query time: {brute_range_time:.6f} seconds, found {len(brute_result)} results")
-    
-    # Compare memory usage
-    print("\nComparing memory usage:")
-    bplus_memory = bplus_tree.get_memory_usage()
-    brute_memory = brute_force.get_memory_usage()
-    print(f"B+ Tree memory usage: {bplus_memory} bytes")
-    print(f"Brute Force memory usage: {brute_memory} bytes")
+    for data_size in set_sizes:
+        print(f"\n--- Testing with {data_size} records ---")
+        
+        # Set up data structures
+        bplus_tree = BPlusTree(order=10)
+        brute_force = BruteForceDB()
+        
+        # Generate test data
+        keys = random.sample(range(data_size * 5), data_size)
+        values = [f"value_{k}" for k in keys]
+        
+        # Compare insertion
+        print("\nComparing insertion performance:")
+        
+        start_time = time.time()
+        for i, key in enumerate(keys):
+            bplus_tree.insert(key, values[i])
+        bplus_insert_time = time.time() - start_time
+        results['bplus_insert'].append(bplus_insert_time)
+        print(f"B+ Tree insertion time: {bplus_insert_time:.6f} seconds")
+        
+        start_time = time.time()
+        for i, key in enumerate(keys):
+            brute_force.insert(key, values[i])
+        brute_insert_time = time.time() - start_time
+        results['brute_insert'].append(brute_insert_time)
+        print(f"Brute Force insertion time: {brute_insert_time:.6f} seconds")
+        
+        # Visualize the performance B+ tree for the largest dataset only
+        if data_size == max(set_sizes):
+            try:
+                os.makedirs("visualizations", exist_ok=True)
+                bplus_tree.visualize_tree("visualizations/performance_bplus_tree")
+                print("\nPerformance B+ Tree visualization saved to visualizations/performance_bplus_tree.png")
+            except Exception as e:
+                print(f"\nError visualizing performance B+ tree: {e}")
+        
+        # Compare search
+        print("\nComparing search performance:")
+        search_keys = random.sample(keys, min(100, data_size))
+        
+        start_time = time.time()
+        for key in search_keys:
+            bplus_tree.search(key)
+        bplus_search_time = time.time() - start_time
+        results['bplus_search'].append(bplus_search_time)
+        print(f"B+ Tree search time: {bplus_search_time:.6f} seconds")
+        
+        start_time = time.time()
+        for key in search_keys:
+            brute_force.search(key)
+        brute_search_time = time.time() - start_time
+        results['brute_search'].append(brute_search_time)
+        print(f"Brute Force search time: {brute_search_time:.6f} seconds")
+        
+        # Compare deletion (new)
+        print("\nComparing deletion performance:")
+        delete_keys = random.sample(keys, min(100, data_size))
+        
+        start_time = time.time()
+        for key in delete_keys:
+            bplus_tree.delete(key)
+        bplus_delete_time = time.time() - start_time
+        results['bplus_delete'].append(bplus_delete_time)
+        print(f"B+ Tree deletion time: {bplus_delete_time:.6f} seconds")
+        
+        start_time = time.time()
+        for key in delete_keys:
+            brute_force.delete(key)
+        brute_delete_time = time.time() - start_time
+        results['brute_delete'].append(brute_delete_time)
+        print(f"Brute Force deletion time: {brute_delete_time:.6f} seconds")
+        
+        # Compare range query
+        print("\nComparing range query performance:")
+        range_start = data_size // 4
+        range_end = range_start + data_size // 2
+        
+        start_time = time.time()
+        bplus_result = bplus_tree.range_query(range_start, range_end)
+        bplus_range_time = time.time() - start_time
+        results['bplus_range'].append(bplus_range_time)
+        print(f"B+ Tree range query time: {bplus_range_time:.6f} seconds, found {len(bplus_result)} results")
+        
+        start_time = time.time()
+        brute_result = brute_force.range_query(range_start, range_end)
+        brute_range_time = time.time() - start_time
+        results['brute_range'].append(brute_range_time)
+        print(f"Brute Force range query time: {brute_range_time:.6f} seconds, found {len(brute_result)} results")
+        
+        # Compare memory usage
+        print("\nComparing memory usage:")
+        bplus_memory = bplus_tree.get_memory_usage()
+        results['bplus_memory'].append(bplus_memory)
+        print(f"B+ Tree memory usage: {bplus_memory} bytes")
+        
+        brute_memory = brute_force.get_memory_usage()
+        results['brute_memory'].append(brute_memory)
+        print(f"Brute Force memory usage: {brute_memory} bytes")
     
     # Generate performance visualizations
     try:
         os.makedirs("visualizations", exist_ok=True)
         
-        # Define metrics with their respective values
+        # Plot metrics for multiple set sizes
+        plt.figure(figsize=(10, 8))
+        plt.subplot(2, 2, 1)
+        plt.plot(results['sizes'], [t*1000 for t in results['bplus_insert']], 'o-', label='B+ Tree')
+        plt.plot(results['sizes'], [t*1000 for t in results['brute_insert']], 's-', label='Brute Force')
+        plt.title('Insertion Time')
+        plt.xlabel('Number of Records')
+        plt.ylabel('Time (ms)')
+        plt.legend()
+        plt.grid(True)
+        
+        plt.subplot(2, 2, 2)
+        plt.plot(results['sizes'], [t*1000 for t in results['bplus_search']], 'o-', label='B+ Tree')
+        plt.plot(results['sizes'], [t*1000 for t in results['brute_search']], 's-', label='Brute Force')
+        plt.title('Search Time')
+        plt.xlabel('Number of Records')
+        plt.ylabel('Time (ms)')
+        plt.legend()
+        plt.grid(True)
+        
+        plt.subplot(2, 2, 3)
+        plt.plot(results['sizes'], [t*1000 for t in results['bplus_delete']], 'o-', label='B+ Tree')
+        plt.plot(results['sizes'], [t*1000 for t in results['brute_delete']], 's-', label='Brute Force')
+        plt.title('Deletion Time')
+        plt.xlabel('Number of Records')
+        plt.ylabel('Time (ms)')
+        plt.legend()
+        plt.grid(True)
+        
+        plt.subplot(2, 2, 4)
+        plt.plot(results['sizes'], [t*1000 for t in results['bplus_range']], 'o-', label='B+ Tree')
+        plt.plot(results['sizes'], [t*1000 for t in results['brute_range']], 's-', label='Brute Force')
+        plt.title('Range Query Time')
+        plt.xlabel('Number of Records')
+        plt.ylabel('Time (ms)')
+        plt.legend()
+        plt.grid(True)
+        
+        plt.tight_layout()
+        plt.savefig('visualizations/performance_comparison.png')
+        print("Saved performance comparison chart to visualizations/performance_comparison.png")
+        
+        # Memory usage chart
+        plt.figure(figsize=(8, 6))
+        plt.plot(results['sizes'], [m/1024 for m in results['bplus_memory']], 'o-', label='B+ Tree')
+        plt.plot(results['sizes'], [m/1024 for m in results['brute_memory']], 's-', label='Brute Force')
+        plt.title('Memory Usage')
+        plt.xlabel('Number of Records')
+        plt.ylabel('Memory (KB)')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig('visualizations/memory_comparison.png')
+        print("Saved memory comparison chart to visualizations/memory_comparison.png")
+        
+        # Individual metric charts
         metrics = [
             {
                 'name': 'Insertion Time (ms)',
-                'bplus': bplus_insert_time * 1000,
-                'brute': brute_insert_time * 1000,
+                'bplus': results['bplus_insert'][-1] * 1000,
+                'brute': results['brute_insert'][-1] * 1000,
                 'filename': 'insertion_time'
             },
             {
                 'name': 'Search Time (ms)',
-                'bplus': bplus_search_time * 1000,
-                'brute': brute_search_time * 1000,
+                'bplus': results['bplus_search'][-1] * 1000,
+                'brute': results['brute_search'][-1] * 1000,
                 'filename': 'search_time'
             },
             {
+                'name': 'Deletion Time (ms)',
+                'bplus': results['bplus_delete'][-1] * 1000,
+                'brute': results['brute_delete'][-1] * 1000,
+                'filename': 'deletion_time'
+            },
+            {
                 'name': 'Range Query Time (ms)',
-                'bplus': bplus_range_time * 1000,
-                'brute': brute_range_time * 1000,
+                'bplus': results['bplus_range'][-1] * 1000,
+                'brute': results['brute_range'][-1] * 1000,
                 'filename': 'range_query_time'
             },
             {
                 'name': 'Memory Usage (KB)',
-                'bplus': bplus_memory / 1024,
-                'brute': brute_memory / 1024,
+                'bplus': results['bplus_memory'][-1] / 1024,
+                'brute': results['brute_memory'][-1] / 1024,
                 'filename': 'memory_usage'
             }
         ]
         
-        # Create a separate graph for each metric
+        # Create bar charts for the largest dataset
         for metric in metrics:
             plt.figure(figsize=(8, 5))
             
@@ -283,6 +391,85 @@ def run_performance_comparison():
             
     except Exception as e:
         print(f"Error generating performance comparison charts: {e}")
+
+    # Random operations performance test
+    print("\n=== Testing Random Operations Performance ===")
+    
+    # Set up data structures
+    data_size = 1000
+    bplus_tree = BPlusTree(order=10)
+    brute_force = BruteForceDB()
+    
+    # Fill with initial data
+    keys = list(range(data_size))
+    values = [f"value_{k}" for k in keys]
+    
+    for i, key in enumerate(keys[:data_size//2]):
+        bplus_tree.insert(key, values[i])
+        brute_force.insert(key, values[i])
+    
+    # Random operations
+    num_operations = 500
+    operations = []
+    for _ in range(num_operations):
+        op = random.choice(['insert', 'search', 'delete'])
+        if op == 'insert':
+            key = random.randint(data_size//2, data_size-1)
+            operations.append(('insert', key, f"value_{key}"))
+        else:
+            key = random.randint(0, data_size//2-1)
+            operations.append((op, key))
+    
+    # Test B+ Tree
+    start_time = time.time()
+    for op in operations:
+        if op[0] == 'insert':
+            bplus_tree.insert(op[1], op[2])
+        elif op[0] == 'search':
+            bplus_tree.search(op[1])
+        elif op[0] == 'delete':
+            bplus_tree.delete(op[1])
+    bplus_random_time = time.time() - start_time
+    
+    # Test Brute Force
+    start_time = time.time()
+    for op in operations:
+        if op[0] == 'insert':
+            brute_force.insert(op[1], op[2])
+        elif op[0] == 'search':
+            brute_force.search(op[1])
+        elif op[0] == 'delete':
+            brute_force.delete(op[1])
+    brute_random_time = time.time() - start_time
+    
+    print(f"B+ Tree random operations time: {bplus_random_time:.6f} seconds")
+    print(f"Brute Force random operations time: {brute_random_time:.6f} seconds")
+    
+    # Create bar chart for random operations
+    plt.figure(figsize=(8, 5))
+    bars = plt.bar(['B+ Tree', 'Brute Force'], 
+                  [bplus_random_time * 1000, brute_random_time * 1000],
+                  color=['#1f77b4', '#ff7f0e'],
+                  width=0.6)
+    
+    # Add value labels
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2., 
+                height * 1.02,
+                f'{height:.4f}',
+                ha='center', va='bottom', fontsize=10)
+    
+    plt.title('Random Operations Performance: B+ Tree vs Brute Force')
+    plt.ylabel('Time (ms)')
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    
+    # Save figure
+    filename = "visualizations/random_operations.png"
+    plt.savefig(filename)
+    print(f"Saved {filename}")
+    
+    plt.close()
 
 def main():
     """Run the demonstration of the B+ Tree database functionality."""

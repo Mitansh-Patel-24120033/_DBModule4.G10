@@ -1,6 +1,8 @@
 # Core libraries for the assignment
-matplotlib
-graphviz
+matplotlib>=3.5.0
+graphviz>=0.20.1
+flask>=2.0.0
+jupyter>=1.0.0
 
 # Optional, but often useful with matplotlib
 numpy

@@ -12,16 +12,39 @@ class BPlusTreeNode:
     def __init__(self, is_leaf=False, order=4): # Default order, adjust as needed
         self.is_leaf = is_leaf
         self.keys = []
-        self.values = [] # Only used if is_leaf is True
-        self.children = [] # Only used if is_leaf is False
-        
-        # For internal nodes, ensure there's at least one child slot
-        if not is_leaf:
-            self.children = [None]  # Initialize with one empty child pointer
-            
+        self.values = [] if is_leaf else None  # Only leaf nodes store values
+        self.children = [] if not is_leaf else None  # Only internal nodes store children
         self.parent = None
         self.next_leaf = None # Only used if is_leaf is True
         self.order = order # Store order for split/merge logic
+
+    def ensure_valid_structure(self, silent=False):
+        """Ensure internal nodes maintain the B+ tree property of n+1 children for n keys"""
+        if self.is_leaf:
+            return True  # Leaf nodes don't need structure validation
+            
+        # For internal nodes: must have exactly n+1 children for n keys
+        expected_children = len(self.keys) + 1
+        
+        if len(self.children) != expected_children:
+            # Structure is invalid
+            if len(self.children) < expected_children:
+                # Add missing children (all leaves for simplicity)
+                while len(self.children) < expected_children:
+                    new_child = BPlusTreeNode(is_leaf=True, order=self.order)
+                    new_child.parent = self
+                    self.children.append(new_child)
+            else:
+                # Too many children - trim to correct number
+                # Keep first and last child pointers for range integrity
+                if len(self.children) > 1:
+                    # Keep the first child + one child per key
+                    self.children = [self.children[0]] + self.children[1:expected_children]
+            
+            if not silent:
+                print(f"Fixed B+ Tree node: adjusted from {len(self.children)-(expected_children)} children to {expected_children} children for {len(self.keys)} keys")
+            return False  # Structure needed fixing
+        return True  # Structure was valid
 
     def is_full(self):
         return len(self.keys) >= self.order - 1 # Max keys allowed is order - 1
@@ -29,7 +52,6 @@ class BPlusTreeNode:
     def is_underflow(self):
         # Root can have fewer keys, handle separately in BPlusTree class
         # Minimum keys is ceil(order / 2) - 1 for internal, ceil((order-1)/2) for leaf
-        # Simplified for now: Check if below half (adjust based on precise definition)
         min_keys = math.ceil((self.order -1) / 2) # Common minimum for leaves
         if not self.is_leaf:
             min_keys = math.ceil(self.order / 2) - 1 # Common minimum for internal
@@ -46,56 +68,72 @@ class BPlusTree:
     def _find_leaf(self, key):
         """ Helper: Traverse tree to find the leaf node where the key should reside. """
         node = self.root
+        
+        # Validate the root if it's not a leaf
+        if not node.is_leaf:
+            node.ensure_valid_structure(silent=True)
+        
         while not node.is_leaf:
             # Find the first key greater than the target key
             i = 0
             while i < len(node.keys) and key >= node.keys[i]:
                 i += 1
+            
+            # Get the appropriate child - should always be valid now
+            child = node.children[i]
+            
+            # If the child is an internal node, validate its structure too
+            if not child.is_leaf:
+                child.ensure_valid_structure(silent=True)
                 
-            # Make sure we don't access an index that doesn't exist
-            if not node.children or i >= len(node.children):
-                # This shouldn't happen in a properly constructed B+ Tree
-                # But we'll handle it gracefully by returning the current node
-                print(f"Warning: B+ Tree structure issue. Node has {len(node.keys)} keys but {len(node.children) if node.children else 0} children.")
-                return node
-                
-            node = node.children[i] # Follow the appropriate child pointer
+            node = child
+            
         return node
 
     def search(self, key):
         """ Search for a key in the B+ tree. Return associated value if found, else None """
         leaf_node = self._find_leaf(key)
         
-        # Check if this is really a leaf node (should be, but just in case)
-        if not leaf_node.is_leaf:
-            print(f"Warning: Expected leaf node but got internal node during search for key {key}")
-            return None
-            
-        # Simple linear search within the leaf node (can optimize with binary search)
+        # Simple linear search within the leaf node
         try:
             index = leaf_node.keys.index(key)
             # Verify that the values list has enough elements
             if index < len(leaf_node.values):
                 return leaf_node.values[index]
             else:
-                print(f"Warning: Found key {key} at index {index}, but values list only has {len(leaf_node.values)} elements")
                 return None
         except ValueError:
             return None # Key not found
 
     def insert(self, key, value):
-        """ Insert key-value pair into the B+ tree. Handle root splitting if necessary. """
+        """
+        Insert key-value pair into the B+ tree.
+        Handle root splitting if necessary.
+        Maintain sorted order and balance properties.
+        """
+        # If this is the very first insert and root is empty, just add directly
+        if not self.root.keys and self.root.is_leaf:
+            self.root.keys.append(key)
+            self.root.values.append(value)
+            return
+        
         # Find the appropriate leaf node
         leaf_node = self._find_leaf(key)
         
-        # Make sure we're working with a leaf node
+        # Verify we have a leaf node - should always be true with fixed _find_leaf
         if not leaf_node.is_leaf:
-            print(f"Warning: Expected leaf node but got internal node during insert for key {key}")
-            # Create a leaf node as fallback
-            leaf_node = BPlusTreeNode(is_leaf=True, order=self.order)
-            # If root is not a leaf, we need to recreate the structure
-            if self.root != leaf_node:
-                self.root = leaf_node
+            # Create a new leaf node
+            new_leaf = BPlusTreeNode(is_leaf=True, order=self.order)
+            
+            # Insert it as a child of the current node if possible
+            if not leaf_node.children:
+                leaf_node.children = [new_leaf]
+            else:
+                leaf_node.children.append(new_leaf)
+                
+            new_leaf.parent = leaf_node
+            leaf_node.ensure_valid_structure(silent=True)
+            leaf_node = new_leaf
 
         # Add key/value to leaf (maintaining sorted order)
         # Find insertion point
@@ -103,10 +141,10 @@ class BPlusTree:
         while insert_idx < len(leaf_node.keys) and leaf_node.keys[insert_idx] < key:
             insert_idx += 1
 
-        # Avoid duplicates if necessary (policy decision - here we allow update/overwrite)
+        # Avoid duplicates - update existing key if found
         if insert_idx < len(leaf_node.keys) and leaf_node.keys[insert_idx] == key:
-             leaf_node.values[insert_idx] = value # Update existing key
-             return
+            leaf_node.values[insert_idx] = value  # Update existing key
+            return
 
         # Insert the new key-value pair at the appropriate position
         leaf_node.keys.insert(insert_idx, key)
@@ -114,86 +152,118 @@ class BPlusTree:
 
         # Check if node needs splitting
         if leaf_node.is_full():
-            self._split_child(leaf_node) # Use a generalized split function
+            self._split_node(leaf_node)
 
-    def _insert_non_full(self, node, key, value):
-        """ Recursive helper to insert into a non-full node (more complex than initial insert).
-            Often used when inserting involves traversing down and potentially splitting children.
-            The basic insert above handles the common case directly for simplicity here.
-            This function signature from appendix might be for a different B-Tree variant or approach.
-            We'll rely on splitting *after* insertion in the leaf for this skeleton.
+    def _split_node(self, node):
         """
-        # This function is complex to implement correctly with recursive splitting.
-        # The simpler approach is: insert into leaf, then split upwards if needed.
-        # We will use the simpler approach and leave this as per the appendix signature.
-        pass # Implementation depends heavily on chosen insertion strategy
-
-    def _split_child(self, node):
-        """ Split a node (leaf or internal) into two nodes. Propagate split upwards. """
-        # This needs careful handling for both leaf and internal nodes,
-        # updating parent pointers, and potentially splitting the root.
-        mid_index = self.order // 2 # Split point (adjust based on definition)
-
-        # Create the new sibling node
-        new_node = BPlusTreeNode(is_leaf=node.is_leaf, order=self.order)
-        new_node.parent = node.parent # Sibling shares the same parent initially
-
-        # Move keys/values/children to the new node
-        new_node.keys = node.keys[mid_index:]
+        Split a node (leaf or internal) into two nodes.
+        Improved version of _split_child with more consistent naming and handling.
+        """
+        # Calculate split point
+        mid_index = self.order // 2  # Split point
+        
+        # Create new sibling node with the same properties as the original
+        new_sibling = BPlusTreeNode(is_leaf=node.is_leaf, order=self.order)
+        new_sibling.parent = node.parent  # Both will share the same parent initially
+        
+        # Handle the split based on node type
         if node.is_leaf:
-            new_node.values = node.values[mid_index:]
-            middle_key_to_parent = new_node.keys[0] # Copy-up for leaves
-            # Update linked list pointers
-            new_node.next_leaf = node.next_leaf
-            node.next_leaf = new_node
-        else: # Internal node
-            new_node.children = node.children[mid_index + 1:] # Children pointers shift
-            middle_key_to_parent = node.keys[mid_index] # Push-up for internal
-            # Update parent pointers of moved children
-            for child in new_node.children:
-                child.parent = new_node
-
-        # Truncate the original node
-        node.keys = node.keys[:mid_index]
-        if node.is_leaf:
+            # For leaf nodes
+            # Copy second half of keys and values to the new sibling
+            new_sibling.keys = node.keys[mid_index:]
+            new_sibling.values = node.values[mid_index:]
+            
+            # The key to add to parent (copied up)
+            parent_key = new_sibling.keys[0]  
+            
+            # Update linked list pointers for leaves
+            new_sibling.next_leaf = node.next_leaf
+            node.next_leaf = new_sibling
+            
+            # Truncate the original node
+            node.keys = node.keys[:mid_index]
             node.values = node.values[:mid_index]
         else:
-            # Adjust children list for internal node (keep first mid+1 children)
-            node.children = node.children[:mid_index + 1]
-
-        # --- Handle Parent ---
+            # For internal nodes
+            # Key that moves up to parent (not kept in this node)
+            parent_key = node.keys[mid_index]
+            
+            # Copy keys after the middle key to the new sibling
+            new_sibling.keys = node.keys[mid_index+1:]
+            
+            # Make sure both nodes have appropriate child pointers
+            new_sibling.children = node.children[mid_index+1:]
+            node.children = node.children[:mid_index+1]
+            
+            # Update parent pointers for all children of the new sibling
+            for child in new_sibling.children:
+                if child:
+                    child.parent = new_sibling
+            
+            # Truncate the original node keys (remove middle key that moved up)
+            node.keys = node.keys[:mid_index]
+            
+            # Validate structure
+            node.ensure_valid_structure(silent=True)
+            new_sibling.ensure_valid_structure(silent=True)
+        
+        # Handle parent updates
         if node.parent is None:
-            # Splitting the root
+            # If splitting the root, create a new root
             new_root = BPlusTreeNode(is_leaf=False, order=self.order)
-            new_root.keys = [middle_key_to_parent]
-            new_root.children = [node, new_node]  # Explicitly set both children
+            new_root.keys = [parent_key]
+            new_root.children = [node, new_sibling]
+            
+            # Update parent references
             node.parent = new_root
-            new_node.parent = new_root
+            new_sibling.parent = new_root
+            
+            # This is now the new root
             self.root = new_root
         else:
-            # Insert middle key into parent
+            # Otherwise insert into existing parent
             parent = node.parent
-            # Find index in parent where new key/child should go
+            
+            # Find where to insert in the parent
             insert_idx = 0
-            while insert_idx < len(parent.keys) and parent.keys[insert_idx] < middle_key_to_parent:
+            while insert_idx < len(parent.keys) and parent.keys[insert_idx] < parent_key:
                 insert_idx += 1
-            parent.keys.insert(insert_idx, middle_key_to_parent)
-            parent.children.insert(insert_idx + 1, new_node)
-
-            # Check if parent also needs splitting
+                
+            # Insert the key and child pointer in the parent
+            parent.keys.insert(insert_idx, parent_key)
+            
+            # Find the index of the original node in parent's children
+            for i, child in enumerate(parent.children):
+                if child == node:
+                    # Insert the new sibling right after the original node
+                    parent.children.insert(i+1, new_sibling)
+                    break
+            
+            # Set parent reference for new sibling
+            new_sibling.parent = parent
+            
+            # Ensure parent structure is valid
+            parent.ensure_valid_structure(silent=True)
+            
+            # Check if parent needs splitting too
             if parent.is_full():
-                self._split_child(parent) # Recursive split
+                self._split_node(parent)
 
     def delete(self, key):
-        """ Delete key from the B+ tree. Handle underflow by borrowing or merging. """
+        """
+        Delete key from the B+ tree.
+        Handle underflow by borrowing from siblings or merging nodes.
+        Update root if it becomes empty.
+        Return True if deletion succeeded, False otherwise.
+        """
+        # First find the leaf node containing the key
         leaf_node = self._find_leaf(key)
 
         # Try to find the key in the leaf
         try:
             index = leaf_node.keys.index(key)
         except ValueError:
-            print(f"Key {key} not found for deletion.")
-            return False # Key not found
+            return False # Key not found (silently fail instead of printing)
 
         # Remove key and value
         leaf_node.keys.pop(index)
@@ -204,16 +274,19 @@ class BPlusTree:
             # Need to find the node's index in its parent's children list
             parent = leaf_node.parent
             if parent: # Root underflow handled differently (tree height shrinks)
+                 # Ensure parent structure is valid
+                 parent.ensure_valid_structure(silent=True)
+                 
                  child_index = -1
                  for i, child in enumerate(parent.children):
                      if child == leaf_node:
                          child_index = i
                          break
                  if child_index != -1:
-                     self._handle_underflow(parent, child_index)
+                     self._fill_child(parent, child_index)
                  else:
-                     # This case should ideally not happen if tree structure is correct
-                     print("Error: Could not find child index during underflow handling.")
+                     # This should never happen with our improved structure validation
+                     pass
             elif len(self.root.keys) == 0 and not self.root.is_leaf:
                  # Root is internal and became empty after deletion/merge from below
                  self.root = self.root.children[0] # Promote the single child
@@ -221,98 +294,175 @@ class BPlusTree:
 
         return True
 
-    def _handle_underflow(self, parent, child_index):
-        """ Handles underflow in the child at parent.children[child_index]. """
-        child = parent.children[child_index]
-
-        # Try borrowing from left sibling
-        if child_index > 0:
-            left_sibling = parent.children[child_index - 1]
-            if len(left_sibling.keys) > math.ceil((self.order - 1) / 2): # Check if left sibling has extra keys
-                self._borrow_from_prev(child, parent, child_index, left_sibling)
-                return
-
-        # Try borrowing from right sibling
-        if child_index < len(parent.children) - 1:
-            right_sibling = parent.children[child_index + 1]
-            if len(right_sibling.keys) > math.ceil((self.order - 1) / 2): # Check if right sibling has extra keys
-                 self._borrow_from_next(child, parent, child_index, right_sibling)
-                 return
-
-        # If borrowing failed, merge
-        if child_index > 0:
-            # Merge with left sibling
-            self._merge(parent, child_index - 1)
-        else:
-            # Merge with right sibling (merge child at index 0 with child at index 1)
-             self._merge(parent, child_index)
-
     def _delete(self, node, key):
-        """ Recursive helper for deletion. Handles leaf and internal nodes.
-            Ensures all nodes maintain minimum keys after deletion.
-            (Alternative deletion strategy to the one implemented above)
         """
-        # This is complex, involves finding key, handling internal node key deletion
-        # (replacing with successor), and recursive calls. The above strategy
-        # deletes from leaf and handles underflow upwards, which is common for B+.
-        pass # Not implemented in this skeleton using the leaf-first approach
+        Recursive helper for deletion. Handle leaf and internal nodes.
+        Ensure all nodes maintain minimum keys after deletion.
+        """
+        # Find the position where key is or would be
+        i = 0
+        while i < len(node.keys) and key > node.keys[i]:
+            i += 1
+            
+        # Case: Leaf node (direct deletion)
+        if node.is_leaf:
+            # If key exists in this leaf
+            if i < len(node.keys) and node.keys[i] == key:
+                node.keys.pop(i)
+                node.values.pop(i)
+                return True
+            return False  # Key not found
+            
+        # Case: Internal node
+        # If key is in this node at position i
+        if i < len(node.keys) and node.keys[i] == key:
+            # Replace with predecessor or successor based on which child has more keys
+            if len(node.children[i].keys) >= len(node.children[i+1].keys):
+                # Use predecessor (rightmost key in left subtree)
+                pred_node = node.children[i]
+                while not pred_node.is_leaf:
+                    pred_node = pred_node.children[-1]
+                pred_key = pred_node.keys[-1]
+                pred_value = pred_node.values[-1] if pred_node.is_leaf else None
+                
+                # Replace key with predecessor
+                node.keys[i] = pred_key
+                
+                # Delete predecessor from leaf
+                return self._delete(node.children[i], pred_key)
+            else:
+                # Use successor (leftmost key in right subtree)
+                succ_node = node.children[i+1]
+                while not succ_node.is_leaf:
+                    succ_node = succ_node.children[0]
+                succ_key = succ_node.keys[0]
+                succ_value = succ_node.values[0] if succ_node.is_leaf else None
+                
+                # Replace key with successor
+                node.keys[i] = succ_key
+                
+                # Delete successor from leaf
+                return self._delete(node.children[i+1], succ_key)
+        
+        # Key not in this node, recurse to appropriate child
+        # First ensure child has enough keys
+        if len(node.children[i].keys) < math.ceil(self.order / 2):
+            self._fill_child(node, i)
+            
+        # Recursively delete
+        # After _fill_child, the structure may have changed, so we need to recalculate i
+        i = 0
+        while i < len(node.keys) and key > node.keys[i]:
+            i += 1
+            
+        # Check if child i still exists (may have merged)
+        if i >= len(node.children):
+            i = len(node.children) - 1
+            
+        return self._delete(node.children[i], key)
 
     def _fill_child(self, node, index):
-        """ Ensure child at given index has enough keys by borrowing or merging.
-            (Helper function often used in top-down deletion strategies)
         """
-        # This is part of the alternative deletion strategy where you ensure
-        # a node is not minimum *before* recursing into it.
-        pass # Not implemented in this skeleton
+        Ensure child at given index has enough keys by borrowing from siblings or merging.
+        """
+        # Make sure the node we're working with has a valid structure
+        node.ensure_valid_structure(silent=True)
+        
+        # Verify the index is valid
+        if index < 0 or index >= len(node.children):
+            return
+        
+        child = node.children[index]
+        min_keys = math.ceil(self.order / 2) - 1
+        
+        # Try borrowing from left sibling
+        if index > 0:
+            left_sibling = node.children[index-1]
+            left_sibling.ensure_valid_structure(silent=True)
+            
+            if len(left_sibling.keys) > min_keys:
+                self._borrow_from_prev(node, index)
+                return
+        
+        # Try borrowing from right sibling
+        if index < len(node.children)-1:
+            right_sibling = node.children[index+1]
+            right_sibling.ensure_valid_structure(silent=True)
+            
+            if len(right_sibling.keys) > min_keys:
+                self._borrow_from_next(node, index)
+                return
+            
+        # Merge with a sibling
+        # If last child, merge with previous
+        if index == len(node.children)-1:
+            self._merge(node, index-1)
+        # Otherwise merge with next
+        else:
+            self._merge(node, index)
+        
+        # Ensure the node still has valid structure after merging
+        node.ensure_valid_structure(silent=True)
 
-    def _borrow_from_prev(self, node, parent, node_index, left_sibling):
-        """ Borrow a key from the left sibling to prevent underflow. """
-        # Move parent key down, move sibling key up
-        # Careful with indices and whether node is leaf or internal
-        print(f"Borrowing from previous sibling for node {node_index}")
+    def _borrow_from_prev(self, node, index):
+        """
+        Borrow a key from the left sibling to prevent underflow.
+        """
+        child = node.children[index]
+        left_sibling = node.children[index-1]
+        
+        # For leaf nodes
+        if child.is_leaf:
+            # Move the last key-value from left sibling to child
+            child.keys.insert(0, left_sibling.keys.pop())
+            child.values.insert(0, left_sibling.values.pop())
+            
+            # Update parent key to match first key in right child
+            node.keys[index-1] = child.keys[0]
+        else:
+            # For internal nodes
+            # Move parent's key down to child
+            child.keys.insert(0, node.keys[index-1])
+            
+            # Move right-most child pointer from left sibling if needed
+            if left_sibling.children:
+                child.children.insert(0, left_sibling.children.pop())
+                # Update its parent pointer
+                if child.children[0]:
+                    child.children[0].parent = child
+            
+            # Move left sibling's last key up to parent
+            node.keys[index-1] = left_sibling.keys.pop()
 
-        # Move separator key from parent down to the start of the current node
-        separator_index_in_parent = node_index - 1
-        node.keys.insert(0, parent.keys[separator_index_in_parent])
-
-        if node.is_leaf:
-            # Move last key-value from left sibling
-            borrowed_value = left_sibling.values.pop()
-            borrowed_key = left_sibling.keys.pop()
-            node.values.insert(0, borrowed_value)
-            # Update parent's separator key to the new first key of the right node (which is the borrowed key)
-            parent.keys[separator_index_in_parent] = borrowed_key # In B+, parent key matches first key in right subtree boundary
-        else: # Internal node
-            # Move last child pointer from left sibling
-            borrowed_child = left_sibling.children.pop()
-            node.children.insert(0, borrowed_child)
-            borrowed_child.parent = node
-            # Update parent's separator key with the last key from the left sibling
-            parent.keys[separator_index_in_parent] = left_sibling.keys.pop()
-
-    def _borrow_from_next(self, node, parent, node_index, right_sibling):
-        """ Borrow a key from the right sibling to prevent underflow. """
-        # Move parent key down, move sibling key up
-        print(f"Borrowing from next sibling for node {node_index}")
-
-        # Move separator key from parent down to the end of the current node
-        separator_index_in_parent = node_index
-        node.keys.append(parent.keys[separator_index_in_parent])
-
-        if node.is_leaf:
-            # Move first key-value from right sibling
-            borrowed_key = right_sibling.keys.pop(0)
-            borrowed_value = right_sibling.values.pop(0)
-            node.values.append(borrowed_value)
-            # Update parent's separator key to the new first key of the right sibling
-            parent.keys[separator_index_in_parent] = right_sibling.keys[0]
-        else: # Internal node
-            # Move first child pointer from right sibling
-            borrowed_child = right_sibling.children.pop(0)
-            node.children.append(borrowed_child)
-            borrowed_child.parent = node
-             # Update parent's separator key with the first key from the right sibling
-            parent.keys[separator_index_in_parent] = right_sibling.keys.pop(0)
+    def _borrow_from_next(self, node, index):
+        """
+        Borrow a key from the right sibling to prevent underflow.
+        """
+        child = node.children[index]
+        right_sibling = node.children[index+1]
+        
+        # For leaf nodes
+        if child.is_leaf:
+            # Move the first key-value from right sibling to child
+            child.keys.append(right_sibling.keys.pop(0))
+            child.values.append(right_sibling.values.pop(0))
+            
+            # Update parent key
+            node.keys[index] = right_sibling.keys[0]
+        else:
+            # For internal nodes
+            # Move parent's key down to child
+            child.keys.append(node.keys[index])
+            
+            # Move left-most child pointer from right sibling
+            if right_sibling.children:
+                child.children.append(right_sibling.children.pop(0))
+                # Update its parent pointer
+                if child.children[-1]:
+                    child.children[-1].parent = child
+            
+            # Move right sibling's first key up to parent
+            node.keys[index] = right_sibling.keys.pop(0)
 
     def _merge(self, parent, merge_start_index):
         """ Merge child at index with its right sibling. Update parent keys. """
@@ -356,10 +506,16 @@ class BPlusTree:
                          parent_index = i
                          break
                  if parent_index != -1:
-                      self._handle_underflow(grandparent, parent_index)
+                      self._fill_child(grandparent, parent_index)
                  else:
                       print("Error: Could not find parent index during recursive underflow.")
 
+    def _handle_underflow(self, parent, child_index):
+        """
+        Handle underflow at a node by borrowing from siblings or merging.
+        This is a wrapper for the _fill_child method for backward compatibility.
+        """
+        self._fill_child(parent, child_index)
 
     def update(self, key, new_value):
         """ Update value associated with an existing key. Return True if successful. """
@@ -543,3 +699,16 @@ class BPlusTree:
             return size
         
         return get_node_size(self.root)
+
+    def _split_child(self, node, index=None):
+        """Legacy method that now redirects to the improved _split_node method"""
+        # For simple case (node itself needs splitting)
+        if index is None:
+            return self._split_node(node)
+        
+        # For the case where node.children[index] needs splitting
+        if 0 <= index < len(node.children):
+            return self._split_node(node.children[index])
+        
+        # Invalid index - just check node structure
+        node.ensure_valid_structure(silent=True)

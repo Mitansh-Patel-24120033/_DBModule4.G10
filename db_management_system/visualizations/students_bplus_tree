@@ -1,0 +1,45 @@
+// B+ Tree
+digraph {
+	splines=false
+	node139788437233984 [label="Internal | 7 | 13" fillcolor=lightblue shape=box style=filled]
+	node139788455226128 [label="Internal | 3 | 5" fillcolor=lightblue shape=box style=filled]
+	node139788437055408 [label="Leaf | 1 | 2" fillcolor=lightyellow shape=box style=filled]
+	node139788438926224 [label="Leaf | 3 | 4" fillcolor=lightyellow shape=box style=filled]
+	node139788437103904 [label="Leaf | 5 | 6" fillcolor=lightyellow shape=box style=filled]
+	node139788437229632 [label="Internal | 9 | 11" fillcolor=lightblue shape=box style=filled]
+	node139788455127248 [label="Leaf | 7 | 8" fillcolor=lightyellow shape=box style=filled]
+	node139788455391312 [label="Leaf | 9 | 10" fillcolor=lightyellow shape=box style=filled]
+	node139788437216848 [label="Leaf | 11 | 12" fillcolor=lightyellow shape=box style=filled]
+	node139788435900128 [label="Internal | 15" fillcolor=lightblue shape=box style=filled]
+	node139788451219408 [label="Leaf | 13 | 14" fillcolor=lightyellow shape=box style=filled]
+	node139788437495984 [label="Leaf | 15" fillcolor=lightyellow shape=box style=filled]
+	node139788437233984 -> node139788455226128
+	node139788455226128 -> node139788437055408
+	node139788455226128 -> node139788438926224
+	node139788455226128 -> node139788437103904
+	node139788437233984 -> node139788437229632
+	node139788437229632 -> node139788455127248
+	node139788437229632 -> node139788455391312
+	node139788437229632 -> node139788437216848
+	node139788437233984 -> node139788435900128
+	node139788435900128 -> node139788451219408
+	node139788435900128 -> node139788437495984
+	{
+		rank=same
+		node139788437055408 [label="Leaf | 1 | 2" fillcolor=lightyellow shape=box style=filled]
+		node139788438926224 [label="Leaf | 3 | 4" fillcolor=lightyellow shape=box style=filled]
+		node139788437055408 -> node139788438926224 [arrowhead=none constraint=true style=dashed]
+		node139788437103904 [label="Leaf | 5 | 6" fillcolor=lightyellow shape=box style=filled]
+		node139788438926224 -> node139788437103904 [arrowhead=none constraint=true style=dashed]
+		node139788455127248 [label="Leaf | 7 | 8" fillcolor=lightyellow shape=box style=filled]
+		node139788437103904 -> node139788455127248 [arrowhead=none constraint=true style=dashed]
+		node139788455391312 [label="Leaf | 9 | 10" fillcolor=lightyellow shape=box style=filled]
+		node139788455127248 -> node139788455391312 [arrowhead=none constraint=true style=dashed]
+		node139788437216848 [label="Leaf | 11 | 12" fillcolor=lightyellow shape=box style=filled]
+		node139788455391312 -> node139788437216848 [arrowhead=none constraint=true style=dashed]
+		node139788451219408 [label="Leaf | 13 | 14" fillcolor=lightyellow shape=box style=filled]
+		node139788437216848 -> node139788451219408 [arrowhead=none constraint=true style=dashed]
+		node139788437495984 [label="Leaf | 15" fillcolor=lightyellow shape=box style=filled]
+		node139788451219408 -> node139788437495984 [arrowhead=none constraint=true style=dashed]
+	}
+}

@@ -1,0 +1,23 @@
+// B+ Tree
+digraph {
+	splines=false
+	node139784001211280 [label="Internal | 3 | 5 | 7" fillcolor=lightblue shape=box style=filled]
+	node139784003786400 [label="Leaf | 1 | 2" fillcolor=lightyellow shape=box style=filled]
+	node139784001213520 [label="Leaf | 3 | 4" fillcolor=lightyellow shape=box style=filled]
+	node139784002990336 [label="Leaf | 5 | 6" fillcolor=lightyellow shape=box style=filled]
+	node139784002990640 [label="Leaf | 7 | 8 | 9" fillcolor=lightyellow shape=box style=filled]
+	node139784001211280 -> node139784003786400
+	node139784001211280 -> node139784001213520
+	node139784001211280 -> node139784002990336
+	node139784001211280 -> node139784002990640
+	{
+		rank=same
+		node139784003786400 [label="Leaf | 1 | 2" fillcolor=lightyellow shape=box style=filled]
+		node139784001213520 [label="Leaf | 3 | 4" fillcolor=lightyellow shape=box style=filled]
+		node139784003786400 -> node139784001213520 [arrowhead=none constraint=true style=dashed]
+		node139784002990336 [label="Leaf | 5 | 6" fillcolor=lightyellow shape=box style=filled]
+		node139784001213520 -> node139784002990336 [arrowhead=none constraint=true style=dashed]
+		node139784002990640 [label="Leaf | 7 | 8 | 9" fillcolor=lightyellow shape=box style=filled]
+		node139784002990336 -> node139784002990640 [arrowhead=none constraint=true style=dashed]
+	}
+}

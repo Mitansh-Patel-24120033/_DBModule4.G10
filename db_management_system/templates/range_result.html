@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h2>Range Query Results</h2>
+
+<div class="card mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Results from Table: {{ table_name }}</h5>
+        <small>Range: {{ start_key }} to {{ end_key }}</small>
+    </div>
+    <div class="card-body">
+        {% if results %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key, value in results %}
+                            <tr>
+                                <td>{{ key }}</td>
+                                <td>
+                                    <pre>{{ value | tojson(indent=2) }}</pre>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="mt-3">Found {{ results|length }} records in range.</p>
+        {% else %}
+            <p class="text-muted">No records found in the specified range.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{{ url_for('view_table', table_name=table_name) }}" class="btn btn-primary">Back to Table</a>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Tables</a>
+</div>
+{% endblock %} 
