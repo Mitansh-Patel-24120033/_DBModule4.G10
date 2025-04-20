@@ -8,6 +8,8 @@ import os
 import sys
 import time
 import random
+import matplotlib
+matplotlib.use('Agg')  # Use non-GUI backend to avoid QSocketNotifier warnings
 import matplotlib.pyplot as plt
 
 from database.db_manager import Database
@@ -18,111 +20,111 @@ def demonstrate_tables():
     """Create sample tables and demonstrate basic operations."""
     print("=== Creating and testing tables ===")
     
-    # Create a database
+    # Create a database (overwrite any existing demo_database.pkl)
+    if os.path.exists("demo_database.pkl"):
+        os.remove("demo_database.pkl")
+        print("Existing demo database removed. Starting fresh with demo_database.pkl.")
     db = Database("demo_database.pkl")
     
-    # Create tables (students and courses)
-    students_table = db.create_table("students", order=4)
-    courses_table = db.create_table("courses", order=4)
+    # Create tables (customers and orders)
+    customers_table = db.create_table("customers", order=4)
+    orders_table = db.create_table("orders", order=4)
     
-    # Add data to the students table
-    print("\nPopulating students table...")
-    students_data = [
-        (1, {"name": "John Smith", "age": 20, "major": "Computer Science"}),
-        (2, {"name": "Emma Johnson", "age": 22, "major": "Physics"}),
-        (3, {"name": "Michael Davis", "age": 21, "major": "Mathematics"}),
-        (4, {"name": "Sophia Wilson", "age": 23, "major": "Engineering"}),
-        (5, {"name": "Daniel Taylor", "age": 20, "major": "Chemistry"}),
-        (6, {"name": "Olivia Brown", "age": 19, "major": "Biology"}),
-        (7, {"name": "William Jones", "age": 22, "major": "Psychology"}),
-        (8, {"name": "Ava Miller", "age": 21, "major": "Economics"}),
-        (9, {"name": "James Garcia", "age": 20, "major": "Business"}),
-        (10, {"name": "Charlotte Martinez", "age": 23, "major": "Sociology"}),
-        (11, {"name": "Benjamin Lee", "age": 24, "major": "Anthropology"}),
-        (12, {"name": "Mia Rodriguez", "age": 19, "major": "English Literature"}),
-        (13, {"name": "Henry Wilson", "age": 22, "major": "Art History"}),
-        (14, {"name": "Amelia Thomas", "age": 21, "major": "Political Science"}),
-        (15, {"name": "Alexander White", "age": 20, "major": "Communications"})
+    # Add data to the customers table
+    print("\nPopulating customers table...")
+    customers_data = [
+        (1, {"customer_name": "Alice Smith", "Age": 30, "customer_email": "alice@example.com", "customer_phone": "111-111-1111", "customer_address": "123 Main St", "customer_image": None}),
+        (2, {"customer_name": "Bob Jones", "Age": 45, "customer_email": "bob@example.com", "customer_phone": "222-222-2222", "customer_address": "456 Oak Ave", "customer_image": None}),
+        (3, {"customer_name": "Carol Taylor", "Age": 28, "customer_email": "carol@example.com", "customer_phone": "333-333-3333", "customer_address": "789 Pine Rd", "customer_image": None}),
+        (4, {"customer_name": "David Brown", "Age": 52, "customer_email": "david@example.com", "customer_phone": "444-444-4444", "customer_address": "135 Elm St", "customer_image": None}),
+        (5, {"customer_name": "Eva Green", "Age": 35, "customer_email": "eva@example.com", "customer_phone": "555-555-5555", "customer_address": "246 Maple Dr", "customer_image": None}),
+        (6, {"customer_name": "Frank White", "Age": 40, "customer_email": "frank@example.com", "customer_phone": "666-666-6666", "customer_address": "358 Cedar Ln", "customer_image": None}),
+        (7, {"customer_name": "Grace Black", "Age": 27, "customer_email": "grace@example.com", "customer_phone": "777-777-7777", "customer_address": "468 Birch Blvd", "customer_image": None}),
+        (8, {"customer_name": "Henry Wood", "Age": 60, "customer_email": "henry@example.com", "customer_phone": "888-888-8888", "customer_address": "579 Spruce Ct", "customer_image": None}),
+        (9, {"customer_name": "Ivy Hill", "Age": 33, "customer_email": "ivy@example.com", "customer_phone": "999-999-9999", "customer_address": "680 Willow Way", "customer_image": None}),
+        (10, {"customer_name": "Jack King", "Age": 47, "customer_email": "jack@example.com", "customer_phone": "101-010-1010", "customer_address": "791 Aspen Pl", "customer_image": None}),
+        (11, {"customer_name": "Kim Lee", "Age": 29, "customer_email": "kim@example.com", "customer_phone": "121-212-1212", "customer_address": "802 Chestnut Cir", "customer_image": None}),
+        (12, {"customer_name": "Leo Scott", "Age": 55, "customer_email": "leo@example.com", "customer_phone": "131-313-1313", "customer_address": "913 Redwood Trl", "customer_image": None}),
+        (13, {"customer_name": "Mia Adams", "Age": 31, "customer_email": "mia@example.com", "customer_phone": "141-414-1414", "customer_address": "102 Fir St", "customer_image": None}),
+        (14, {"customer_name": "Noah Clark", "Age": 41, "customer_email": "noah@example.com", "customer_phone": "151-515-1515", "customer_address": "203 Poplar Rd", "customer_image": None}),
+        (15, {"customer_name": "Olga Evans", "Age": 38, "customer_email": "olga@example.com", "customer_phone": "161-616-1616", "customer_address": "304 Cypress Ln", "customer_image": None})
     ]
+    for cust_id, cust_info in customers_data:
+        customers_table.insert(cust_id, cust_info)
     
-    for student_id, student_info in students_data:
-        students_table.insert(student_id, student_info)
-    
-    # Add data to the courses table
-    print("\nPopulating courses table...")
-    courses_data = [
-        (101, {"title": "Introduction to Programming", "credits": 3, "department": "Computer Science"}),
-        (102, {"title": "Data Structures", "credits": 4, "department": "Computer Science"}),
-        (201, {"title": "Calculus I", "credits": 4, "department": "Mathematics"}),
-        (202, {"title": "Linear Algebra", "credits": 3, "department": "Mathematics"}),
-        (301, {"title": "Quantum Mechanics", "credits": 5, "department": "Physics"}),
-        (302, {"title": "Thermodynamics", "credits": 4, "department": "Physics"}),
-        (401, {"title": "Organic Chemistry", "credits": 5, "department": "Chemistry"}),
-        (402, {"title": "Biochemistry", "credits": 4, "department": "Chemistry"}),
-        (501, {"title": "Molecular Biology", "credits": 4, "department": "Biology"}),
-        (502, {"title": "Ecology", "credits": 3, "department": "Biology"}),
-        (601, {"title": "Cognitive Psychology", "credits": 3, "department": "Psychology"}),
-        (602, {"title": "Microeconomics", "credits": 4, "department": "Economics"}),
-        (701, {"title": "Marketing Principles", "credits": 3, "department": "Business"}),
-        (702, {"title": "Social Theory", "credits": 4, "department": "Sociology"}),
-        (801, {"title": "Literary Analysis", "credits": 3, "department": "English Literature"})
+    # Add data to the orders table
+    print("\nPopulating orders table...")
+    orders_data = [
+        (1, {"customer_id": 1, "order_status": "Pending",   "Total_Amount": 100.00, "Pickup_Date": "2023-01-01", "Delivery_Date": "2023-01-05"}),
+        (2, {"customer_id": 2, "order_status": "Delivered", "Total_Amount": 250.50, "Pickup_Date": "2023-02-10", "Delivery_Date": "2023-02-15"}),
+        (3, {"customer_id": 3, "order_status": "Picked up", "Total_Amount": 75.25,  "Pickup_Date": "2023-03-05", "Delivery_Date": "2023-03-06"}),
+        (4, {"customer_id": 4, "order_status": "Pending",   "Total_Amount": 125.75, "Pickup_Date": "2023-04-12", "Delivery_Date": None}),
+        (5, {"customer_id": 5, "order_status": "Delivered", "Total_Amount": 300.00, "Pickup_Date": "2023-05-20", "Delivery_Date": "2023-05-25"}),
+        (6, {"customer_id": 6, "order_status": "Picked up", "Total_Amount": 50.00,  "Pickup_Date": "2023-06-15", "Delivery_Date": "2023-06-16"}),
+        (7, {"customer_id": 7, "order_status": "Pending",   "Total_Amount": 80.80,  "Pickup_Date": "2023-07-01", "Delivery_Date": None}),
+        (8, {"customer_id": 8, "order_status": "Delivered", "Total_Amount": 220.40, "Pickup_Date": "2023-08-22", "Delivery_Date": "2023-08-27"}),
+        (9, {"customer_id": 9, "order_status": "Picked up", "Total_Amount": 60.60,  "Pickup_Date": "2023-09-10", "Delivery_Date": "2023-09-11"}),
+        (10, {"customer_id": 10, "order_status": "Pending",   "Total_Amount": 150.15, "Pickup_Date": "2023-10-05", "Delivery_Date": None}),
+        (11, {"customer_id": 11, "order_status": "Delivered", "Total_Amount": 175.75, "Pickup_Date": "2023-11-12", "Delivery_Date": "2023-11-17"}),
+        (12, {"customer_id": 12, "order_status": "Picked up", "Total_Amount": 90.90,  "Pickup_Date": "2023-12-01", "Delivery_Date": "2023-12-02"}),
+        (13, {"customer_id": 13, "order_status": "Pending",   "Total_Amount": 110.10, "Pickup_Date": "2024-01-03", "Delivery_Date": None}),
+        (14, {"customer_id": 14, "order_status": "Delivered", "Total_Amount": 130.30, "Pickup_Date": "2024-02-14", "Delivery_Date": "2024-02-19"}),
+        (15, {"customer_id": 15, "order_status": "Picked up", "Total_Amount": 140.40, "Pickup_Date": "2024-03-20", "Delivery_Date": "2024-03-21"})
     ]
-    
-    for course_id, course_info in courses_data:
-        courses_table.insert(course_id, course_info)
+    for order_id, order_info in orders_data:
+        orders_table.insert(order_id, order_info)
     
     # Generate visualizations of the B+ trees
     print("\nGenerating B+ Tree visualizations...")
-    # Create visualizations directory if it doesn't exist
     os.makedirs("visualizations", exist_ok=True)
     
-    # Visualize students table B+ tree
+    # Visualize customers table B+ tree
     try:
-        students_table.visualize("visualizations/students_bplus_tree")
-        print("Students B+ Tree visualization saved to visualizations/students_bplus_tree.png")
+        customers_table.visualize("visualizations/customers_bplus_tree")
+        print("Customers B+ Tree visualization saved to visualizations/customers_bplus_tree.png")
     except Exception as e:
-        print(f"Error visualizing students table: {e}")
+        print(f"Error visualizing customers table: {e}")
     
-    # Visualize courses table B+ tree
+    # Visualize orders table B+ tree
     try:
-        courses_table.visualize("visualizations/courses_bplus_tree")
-        print("Courses B+ Tree visualization saved to visualizations/courses_bplus_tree.png")
+        orders_table.visualize("visualizations/orders_bplus_tree")
+        print("Orders B+ Tree visualization saved to visualizations/orders_bplus_tree.png")
     except Exception as e:
-        print(f"Error visualizing courses table: {e}")
+        print(f"Error visualizing orders table: {e}")
     
     # Demonstrate select operation
     print("\nSelecting data:")
-    student = students_table.select(3)
-    print(f"Student with ID 3: {student}")
+    customer = customers_table.select(3)
+    print(f"Customer with ID 3: {customer}")
     
-    course = courses_table.select(102)
-    print(f"Course with ID 102: {course}")
+    order = orders_table.select(3)
+    print(f"Order with ID 3: {order}")
     
     # Demonstrate range query
     print("\nRange queries:")
-    cs_courses = courses_table.range_query(101, 102)
-    print("Computer Science courses (IDs 101-102):")
-    for course_id, course_info in cs_courses:
-        print(f"  ID: {course_id}, Title: {course_info['title']}")
+    cs_orders = orders_table.range_query(1, 2)
+    print("Orders with IDs 1-2:")
+    for order_id, order_info in cs_orders:
+        print(f"  ID: {order_id}, Status: {order_info['order_status']}")
     
     # Demonstrate update
     print("\nUpdating data:")
-    students_table.update(1, {"name": "John Smith", "age": 21, "major": "Computer Science"})
-    updated_student = students_table.select(1)
-    print(f"Updated student with ID 1: {updated_student}")
+    customers_table.update(1, {"customer_name": "Alice Smith", "Age": 31, "customer_email": "alice@example.com", "customer_phone": "111-111-1111", "customer_address": "123 Main St", "customer_image": None})
+    updated_customer = customers_table.select(1)
+    print(f"Updated customer with ID 1: {updated_customer}")
     
     # Demonstrate delete
     print("\nDeleting data:")
-    students_table.delete(5)
-    deleted_student = students_table.select(5)
-    print(f"Student with ID 5 after deletion: {deleted_student}")
+    customers_table.delete(5)
+    deleted_customer = customers_table.select(5)
+    print(f"Customer with ID 5 after deletion: {deleted_customer}")
     
     # Generate visualization after modifications
     try:
-        students_table.visualize("visualizations/students_bplus_tree_after")
-        print("Modified Students B+ Tree visualization saved to visualizations/students_bplus_tree_after.png")
+        customers_table.visualize("visualizations/customers_bplus_tree_after")
+        print("Modified Customers B+ Tree visualization saved to visualizations/customers_bplus_tree_after.png")
     except Exception as e:
-        print(f"Error visualizing modified students table: {e}")
+        print(f"Error visualizing modified customers table: {e}")
     
     # Save the database
     print("\nSaving database...")
@@ -133,18 +135,13 @@ def demonstrate_tables():
     loaded_db = Database("demo_database.pkl")
     loaded_tables = loaded_db.list_tables()
     print(f"Tables in loaded database: {loaded_tables}")
-    
-    # Clean up the database file
-    if os.path.exists("demo_database.pkl"):
-        os.remove("demo_database.pkl")
-        print("Cleaned up demo database file.")
 
 def run_performance_comparison():
     """Run a comprehensive performance comparison between B+ Tree and BruteForceDB."""
     print("\n=== Performance Comparison: B+ Tree vs Brute Force ===")
     
     # Test with different set sizes
-    set_sizes = [100, 500, 1000, 5000]
+    set_sizes = [500, 1000, 5000, 10000]
     
     # Store results for plotting
     results = {
