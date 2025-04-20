@@ -3,6 +3,9 @@ import os
 import json
 from database.db_manager import Database
 from database.bplustree import BPlusTree
+from database.bruteforce import BruteForceDB
+import random
+import time
 
 app = Flask(__name__)
 app.secret_key = 'bplus_tree_secret_key'  # For flash messages
@@ -243,6 +246,94 @@ def delete_table(table_name):
         flash(f'Error deleting table: {str(e)}', 'error')
     
     return redirect(url_for('index'))
+
+@app.route('/performance')
+def performance():
+    """Run performance comparison and render results in UI."""
+    # Prepare dataset sizes and result storage
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    sizes = [500, 1000, 5000, 10000]
+    results = { 'sizes': sizes,
+                'bplus_insert': [], 'brute_insert': [],
+                'bplus_search': [], 'brute_search': [],
+                'bplus_delete': [], 'brute_delete': [],
+                'bplus_range': [], 'brute_range': [],
+                'bplus_memory': [], 'brute_memory': [] }
+
+    for n in sizes:
+        bpt = BPlusTree(order=10)
+        bf = BruteForceDB()
+        keys = random.sample(range(n*5), n)
+        vals = [f'value_{k}' for k in keys]
+        # insertion
+        t0 = time.time()
+        for i, k in enumerate(keys): bpt.insert(k, vals[i])
+        results['bplus_insert'].append(time.time()-t0)
+        t0 = time.time()
+        for i, k in enumerate(keys): bf.insert(k, vals[i])
+        results['brute_insert'].append(time.time()-t0)
+        # search
+        sample = random.sample(keys, min(100, n))
+        t0 = time.time(); [bpt.search(k) for k in sample]
+        results['bplus_search'].append(time.time()-t0)
+        t0 = time.time(); [bf.search(k) for k in sample]
+        results['brute_search'].append(time.time()-t0)
+        # delete
+        dels = random.sample(keys, min(100, n))
+        t0 = time.time(); [bpt.delete(k) for k in dels]
+        results['bplus_delete'].append(time.time()-t0)
+        t0 = time.time(); [bf.delete(k) for k in dels]
+        results['brute_delete'].append(time.time()-t0)
+        # range
+        r0, r1 = n//4, n//4 + n//2
+        t0 = time.time(); bpt.range_query(r0, r1)
+        results['bplus_range'].append(time.time()-t0)
+        t0 = time.time(); bf.range_query(r0, r1)
+        results['brute_range'].append(time.time()-t0)
+        # memory
+        results['bplus_memory'].append(bpt.get_memory_usage())
+        results['brute_memory'].append(bf.get_memory_usage())
+
+    # generate charts
+    out_dir = os.path.join('static', 'visualizations')
+    os.makedirs(out_dir, exist_ok=True)
+    # Combined comparison chart
+    plt.figure(figsize=(10,8))
+    plt.subplot(2,2,1)
+    plt.plot(sizes, [t*1000 for t in results['bplus_insert']], 'o-', label='B+ Tree')
+    plt.plot(sizes, [t*1000 for t in results['brute_insert']], 's-', label='Brute')
+    plt.title('Insertion Time'); plt.xlabel('Records'); plt.ylabel('ms'); plt.legend(); plt.grid(True)
+    plt.subplot(2,2,2)
+    plt.plot(sizes, [t*1000 for t in results['bplus_search']], 'o-', label='B+ Tree')
+    plt.plot(sizes, [t*1000 for t in results['brute_search']], 's-', label='Brute')
+    plt.title('Search Time'); plt.xlabel('Records'); plt.ylabel('ms'); plt.legend(); plt.grid(True)
+    plt.subplot(2,2,3)
+    plt.plot(sizes, [t*1000 for t in results['bplus_delete']], 'o-', label='B+ Tree')
+    plt.plot(sizes, [t*1000 for t in results['brute_delete']], 's-', label='Brute')
+    plt.title('Deletion Time'); plt.xlabel('Records'); plt.ylabel('ms'); plt.legend(); plt.grid(True)
+    plt.subplot(2,2,4)
+    plt.plot(sizes, [t*1000 for t in results['bplus_range']], 'o-', label='B+ Tree')
+    plt.plot(sizes, [t*1000 for t in results['brute_range']], 's-', label='Brute')
+    plt.title('Range Query Time'); plt.xlabel('Records'); plt.ylabel('ms'); plt.legend(); plt.grid(True)
+    plt.tight_layout()
+    cmp_file = os.path.join(out_dir, 'performance_comparison.png')
+    plt.savefig(cmp_file); plt.close()
+    # Memory usage
+    plt.figure()
+    plt.plot(sizes, [m/1024 for m in results['bplus_memory']], 'o-', label='B+ Tree')
+    plt.plot(sizes, [m/1024 for m in results['brute_memory']], 's-', label='Brute')
+    plt.title('Memory Usage (KB)'); plt.xlabel('Records'); plt.ylabel('KB'); plt.legend(); plt.grid(True)
+    mem_file = os.path.join(out_dir, 'memory_comparison.png')
+    plt.savefig(mem_file); plt.close()
+
+    images = {
+        'Comparison Chart': 'visualizations/performance_comparison.png',
+        'Memory Usage': 'visualizations/memory_comparison.png'
+    }
+    return render_template('performance.html', images=images)
 
 if __name__ == '__main__':
     os.makedirs('static/visualizations', exist_ok=True)
