@@ -1,23 +1,31 @@
 // B+ Tree
 digraph {
 	splines=false
-	node139784001211280 [label="Internal | 3 | 5 | 7" fillcolor=lightblue shape=box style=filled]
-	node139784003786400 [label="Leaf | 1 | 2" fillcolor=lightyellow shape=box style=filled]
-	node139784001213520 [label="Leaf | 3 | 4" fillcolor=lightyellow shape=box style=filled]
-	node139784002990336 [label="Leaf | 5 | 6" fillcolor=lightyellow shape=box style=filled]
-	node139784002990640 [label="Leaf | 7 | 8 | 9" fillcolor=lightyellow shape=box style=filled]
-	node139784001211280 -> node139784003786400
-	node139784001211280 -> node139784001213520
-	node139784001211280 -> node139784002990336
-	node139784001211280 -> node139784002990640
+	node139868980656560 [label="Internal | 7" fillcolor=lightblue shape=box style=filled]
+	node139868981515600 [label="Internal | 3 | 5" fillcolor=lightblue shape=box style=filled]
+	node139868981273104 [label="Leaf | 1 | 2" fillcolor=lightyellow shape=box style=filled]
+	node139868981273744 [label="Leaf | 3 | 4" fillcolor=lightyellow shape=box style=filled]
+	node139868981609744 [label="Leaf | 5 | 6" fillcolor=lightyellow shape=box style=filled]
+	node139868980655200 [label="Internal | 9" fillcolor=lightblue shape=box style=filled]
+	node139868981610048 [label="Leaf | 7 | 8" fillcolor=lightyellow shape=box style=filled]
+	node139868980928752 [label="Leaf | 9 | 10" fillcolor=lightyellow shape=box style=filled]
+	node139868980656560 -> node139868981515600
+	node139868981515600 -> node139868981273104
+	node139868981515600 -> node139868981273744
+	node139868981515600 -> node139868981609744
+	node139868980656560 -> node139868980655200
+	node139868980655200 -> node139868981610048
+	node139868980655200 -> node139868980928752
 	{
 		rank=same
-		node139784003786400 [label="Leaf | 1 | 2" fillcolor=lightyellow shape=box style=filled]
-		node139784001213520 [label="Leaf | 3 | 4" fillcolor=lightyellow shape=box style=filled]
-		node139784003786400 -> node139784001213520 [arrowhead=none constraint=true style=dashed]
-		node139784002990336 [label="Leaf | 5 | 6" fillcolor=lightyellow shape=box style=filled]
-		node139784001213520 -> node139784002990336 [arrowhead=none constraint=true style=dashed]
-		node139784002990640 [label="Leaf | 7 | 8 | 9" fillcolor=lightyellow shape=box style=filled]
-		node139784002990336 -> node139784002990640 [arrowhead=none constraint=true style=dashed]
+		node139868981273104 [label="Leaf | 1 | 2" fillcolor=lightyellow shape=box style=filled]
+		node139868981273744 [label="Leaf | 3 | 4" fillcolor=lightyellow shape=box style=filled]
+		node139868981273104 -> node139868981273744 [arrowhead=none constraint=true style=dashed]
+		node139868981609744 [label="Leaf | 5 | 6" fillcolor=lightyellow shape=box style=filled]
+		node139868981273744 -> node139868981609744 [arrowhead=none constraint=true style=dashed]
+		node139868981610048 [label="Leaf | 7 | 8" fillcolor=lightyellow shape=box style=filled]
+		node139868981609744 -> node139868981610048 [arrowhead=none constraint=true style=dashed]
+		node139868980928752 [label="Leaf | 9 | 10" fillcolor=lightyellow shape=box style=filled]
+		node139868981610048 -> node139868980928752 [arrowhead=none constraint=true style=dashed]
 	}
 }

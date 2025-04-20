@@ -144,7 +144,7 @@ def run_performance_comparison():
     print("\n=== Performance Comparison: B+ Tree vs Brute Force ===")
     
     # Test with different set sizes
-    set_sizes = [50, 100, 200, 500]
+    set_sizes = [100, 500, 1000, 5000]
     
     # Store results for plotting
     results = {
@@ -191,12 +191,14 @@ def run_performance_comparison():
         
         # Visualize the performance B+ tree for the largest dataset only
         if data_size == max(set_sizes):
-            try:
-                os.makedirs("visualizations", exist_ok=True)
-                bplus_tree.visualize_tree("visualizations/performance_bplus_tree")
-                print("\nPerformance B+ Tree visualization saved to visualizations/performance_bplus_tree.png")
-            except Exception as e:
-                print(f"\nError visualizing performance B+ tree: {e}")
+            # Skip visualizing the tree as it can be resource-intensive
+            # try:
+            #     os.makedirs("visualizations", exist_ok=True)
+            #     bplus_tree.visualize_tree("visualizations/performance_bplus_tree")
+            #     print("\nPerformance B+ Tree visualization saved to visualizations/performance_bplus_tree.png")
+            # except Exception as e:
+            #     print(f"\nError visualizing performance B+ tree: {e}")
+            pass
         
         # Compare search
         print("\nComparing search performance:")

@@ -78,7 +78,7 @@ class BPlusTree:
             i = 0
             while i < len(node.keys) and key >= node.keys[i]:
                 i += 1
-            
+                
             # Get the appropriate child - should always be valid now
             child = node.children[i]
             
@@ -232,7 +232,7 @@ class BPlusTree:
             # Insert the key and child pointer in the parent
             parent.keys.insert(insert_idx, parent_key)
             
-            # Find the index of the original node in parent's children
+            # Find the index of the original node in parent's children list
             for i, child in enumerate(parent.children):
                 if child == node:
                     # Insert the new sibling right after the original node
@@ -392,7 +392,7 @@ class BPlusTree:
             if len(right_sibling.keys) > min_keys:
                 self._borrow_from_next(node, index)
                 return
-            
+        
         # Merge with a sibling
         # If last child, merge with previous
         if index == len(node.children)-1:

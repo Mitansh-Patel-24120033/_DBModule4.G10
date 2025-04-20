@@ -3,144 +3,140 @@ This is the repository containing the files for Module 4 Task of Databases(2025)
 
 # B+ Tree Database Management System
 
-A database management system implementation using B+ trees for efficient indexing and querying.
+This repository contains a Python-based lightweight Database Management System using B+ trees for indexing. It fulfills Module 4 requirements for the Databases (2025) course at IIT Gandhinagar by Group 10.
+
+## Table of Contents
+
+- [Features](#features)
+- [Getting Started](#getting-started)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+- [Usage](#usage)
+  - [Demo Script](#demo-script)
+  - [Web Interface](#web-interface)
+  - [Report](#report)
+- [Performance Testing](#performance-testing)
+- [Project Structure](#project-structure)
+- [Contributors](#contributors)
 
 ## Features
 
-- B+ tree implementation with efficient insertion, deletion, search, and range query operations
-- Table creation and management with automatic indexing
-- Performance comparison with brute force approaches
-- Tree structure visualization using Graphviz
-- Database persistence through file storage
-- Comprehensive performance testing framework
+- **B+ Tree Core**: Balanced tree with efficient insertion, deletion, exact search, and range query operations.
+- **Brute-Force Comparison**: Benchmark insertion, search, delete, range queries, random operations, and memory usage against a naive implementation.
+- **Visualization**: Generate Graphviz PNGs of tree structures in real time.
+- **Web-based UI**: Flask app to perform CRUD and range operations on tables and view the B+ tree.
+- **Automated Benchmarking**: Matplotlib plots for performance across multiple dataset sizes.
+- **Persistence**: Store and reload the database state using pickle serialization.
+- **Report Template**: Jupyter notebook (`report.ipynb`) with placeholders for documentation and analysis.
 
-## Requirements
+## Getting Started
 
-- Python 3.6+
-- matplotlib
-- graphviz (for visualization)
-- jupyter (for running the report notebook)
+### Requirements
 
-## Installation
+- Python 3.6+ installed
+- `pip` package manager
+- System Graphviz binaries (e.g., `sudo apt-get install graphviz` on Ubuntu)
 
-1. Clone this repository
-2. Install the required dependencies:
+### Installation
 
 ```bash
-pip install matplotlib graphviz jupyter
-```
-
-3. Install Graphviz system package (required for visualization):
-
-**On Ubuntu/Debian:**
-```bash
-sudo apt-get install graphviz
-```
-
-**On Fedora/CentOS:**
-```bash
-sudo dnf install graphviz
-```
-
-**On macOS:**
-```bash
-brew install graphviz
+# Clone the repo
+git clone <repository-url>
+cd db_management_system
+# Install Python dependencies
+pip install -r requirements.txt
 ```
 
 ## Usage
 
-### Running the Demo
+### Demo Script
 
-To run the demonstration script which creates sample tables, performs operations, and generates visualizations:
+Run a demonstration of table creation, sample data insertion, basic CRUD, tree visualization, and performance benchmarking:
 
 ```bash
 python run_demo.py
 ```
 
-This will:
-- Create sample tables (students and courses)
-- Populate the tables with data
-- Demonstrate basic operations (insert, select, update, delete, range query)
-- Generate B+ tree visualizations
-- Run performance comparison between B+ tree and brute force approaches
-- Create performance comparison charts
+Outputs:
+- Sample tables (`students`, `courses`) with 15 records each
+- CRUD operation logs
+- B+ tree PNGs in `visualizations/`
+- Performance charts (insertion, search, delete, range, memory) in `visualizations/`
 
-### Generating the Report
+### Web Interface
 
-To generate the project report:
-
-1. Start Jupyter Notebook:
-
-```bash
-jupyter notebook
-```
-
-2. Open `report.ipynb` in the Jupyter interface
-3. Run all cells to generate the complete report with visualizations
-
-## Project Structure
-
-```
-db_management_system/
-├── database/
-│   ├── __init__.py       # Package initialization
-│   ├── bplustree.py      # B+ Tree implementation
-│   ├── bruteforce.py     # Brute force implementation for comparison
-│   ├── db_manager.py     # Database manager
-│   └── table.py          # Table abstraction
-├── report.ipynb          # Report with analysis and visualizations
-└── requirements.txt      # Project dependencies
-```
-
-## Performance Testing
-
-The system includes comprehensive performance testing that compares B+ tree with brute force approaches on:
-
-- Insertion time
-- Search time
-- Deletion time
-- Range query time
-- Random operations
-- Memory usage
-
-Multiple dataset sizes are tested to demonstrate how performance scales with data volume.
-
-## Web Interface
-
-A web-based UI is provided for interacting with the database system. This allows you to:
-
-- Create and delete tables
-- Insert, update, delete, and search for records
-- Perform range queries
-- Visualize the B+ tree structure in real-time
-
-To run the web interface:
+Start the Flask-based UI:
 
 ```bash
 python app.py
 ```
 
-Then open your browser and go to http://127.0.0.1:5000/
+Open your browser at http://127.0.0.1:5000/ to:
+- Create or delete tables
+- Insert, update, delete, search, and range query records
+- View the live B+ tree structure PNG
 
-### Web UI Features:
+### Report
 
-1. **Home Page**: Lists all tables and provides form to create new tables
-2. **Table View**: Shows all records in a table with options to:
-   - Insert new records
-   - Update existing records
-   - Delete records
-   - Search for specific keys
-   - Perform range queries
-3. **B+ Tree Visualization**: Each table page displays a visualization of its current B+ tree structure
+Launch Jupyter Notebook and open the template to write your analysis:
 
-## License
+```bash
+jupyter notebook report.ipynb
+```
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+Run all cells to regenerate charts and visualizations.
+
+## Performance Testing
+
+Benchmarks are run for dataset sizes `[100, 500, 1000, 5000]`. Metrics measured:
+- Insertion time
+- Search time
+- Deletion time
+- Range query time
+- Random mixed operations
+- Memory usage
+
+Charts are saved under `visualizations/` for comparison between the B+ tree and brute-force approaches.
+
+## Project Structure
+
+```
+.
+├── app.py                  # Flask web interface
+├── run_demo.py            # Demo script & performance benchmarking
+├── database/              # Core database modules
+│   ├── bplustree.py        # B+ tree implementation
+│   ├── bruteforce.py       # Brute force comparator
+│   ├── db_manager.py       # Database manager & persistence
+│   └── table.py            # Table abstraction (uses BPlusTree)
+├── templates/             # HTML templates for Flask
+├── static/                # Static assets & visualizations
+│   └── visualizations/     # Generated PNG files
+├── report.ipynb           # Jupyter notebook report template
+├── requirements.txt       # Python dependencies
+└── README.md              # This file
+```
+
 
 ## Contributors
 
-| Name | ID | Email |
-|------|-------|-------|
-| Mitansh Patel | 24120033 | mitansh.patel@iitgn.ac.in |
-| Nishit Prajapati | 24120000 | nishit.prajapati@iitgn.ac.in |
-| Chinteshwar Dhakate | 24120000 | chinteshwar.dhakate@iitgn.ac.in |
+| Name                  | ID        | Email                           |
+|-----------------------|-----------|---------------------------------|
+| Mitansh Patel         | 24120033  | mitansh.patel@iitgn.ac.in       |
+| Nishit Prajapati      | 24120000  | nishit.prajapati@iitgn.ac.in    |
+| Chinteshwar Dhakate   | 24120000  | chinteshwar.dhakate@iitgn.ac.in |
+
+## Module 4 Tasks
+
+Below is an outline of the deliverables for Module 4, with the status of each implementation:
+
+| Task | Description                                               | Status      |
+|------|-----------------------------------------------------------|-------------|
+| 1    | Implement B+ tree core operations (insert, delete, search, range) | ✅ Completed |
+| 2    | Implement BruteForceDB comparator for benchmarking         | ✅ Completed |
+| 3    | Create Database manager and `Table` abstraction            | ✅ Completed |
+| 4    | Conduct comprehensive performance testing                 | ✅ Completed |
+| 5    | Visualize B+ tree structures with Graphviz                | ✅ Completed |
+| 6    | Add persistence (save/load database to disk)              | ✅ Completed |
+| 7    | Provide Jupyter notebook report template                  | ✅ Completed |
+| ➕   | Bonus: Develop a web-based UI for CRUD and visualization  | ✅ Completed |
