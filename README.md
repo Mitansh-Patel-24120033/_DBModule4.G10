@@ -138,5 +138,5 @@ Below is an outline of the deliverables for Module 4, with the status of each im
 | 4    | Conduct comprehensive performance testing                 | ✅ Completed |
 | 5    | Visualize B+ tree structures with Graphviz                | ✅ Completed |
 | 6    | Add persistence (save/load database to disk)              | ✅ Completed |
-| 7    | Provide Jupyter notebook report template                  | ✅ Completed |
+| 7    | Provide Jupyter Notebook Report                           | ✅ Completed |
 | ➕   | Bonus: Develop a web-based UI for CRUD and visualization  | ✅ Completed |
