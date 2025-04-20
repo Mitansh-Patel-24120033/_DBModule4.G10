@@ -2,6 +2,9 @@
 
 {% block content %}
 <h2>Table: {{ table_name }}</h2>
+<div class="mb-3">
+    <a href="{{ url_for('table_performance', table_name=table_name) }}" class="btn btn-secondary">Performance Analysis</a>
+</div>
 
 <div class="row my-4">
     <div class="col-md-8">
@@ -119,6 +122,22 @@
                         <input type="text" class="form-control" id="end_key" name="end_key" required>
                     </div>
                     <button type="submit" class="btn btn-secondary">Execute Range Query</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Modify B+ Tree Order</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('modify_order', table_name=table_name) }}" method="post">
+                    <div class="mb-3">
+                        <label for="new_order" class="form-label">New Order</label>
+                        <input type="number" class="form-control" id="new_order" name="new_order" value="{{ current_order }}" min="3" required>
+                        <div class="form-text">Order must be at least 3. Rebuilding the index will overwrite the current tree.</div>
+                    </div>
+                    <button type="submit" class="btn btn-dark">Rebuild Tree</button>
                 </form>
             </div>
         </div>

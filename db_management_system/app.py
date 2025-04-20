@@ -62,7 +62,9 @@ def view_table(table_name):
         flash(f'Error generating visualization: {str(e)}', 'warning')
         viz_image = None
     
-    return render_template('table.html', table_name=table_name, data=data, viz_image=viz_image)
+    # Pass current tree order for modify-order UI
+    current_order = table.index.order
+    return render_template('table.html', table_name=table_name, data=data, viz_image=viz_image, current_order=current_order)
 
 @app.route('/table/<table_name>/insert', methods=['POST'])
 def insert_record(table_name):
@@ -334,6 +336,112 @@ def performance():
         'Memory Usage': 'visualizations/memory_comparison.png'
     }
     return render_template('performance.html', images=images)
+
+@app.route('/table/<table_name>/performance')
+def table_performance(table_name):
+    if table_name not in db.list_tables():
+        flash(f"Table {table_name} does not exist", 'error')
+        return redirect(url_for('index'))
+
+    table = db.get_table(table_name)
+    # Retrieve all records
+    data = table.get_all_records()
+    keys = [k for k, _ in data]
+    # Build a fresh BruteForceDB with same data
+    bf = BruteForceDB()
+    for k, v in data:
+        bf.insert(k, v)
+
+    # B+ Tree instance is table.index (already loaded)
+    bpt = table.index
+
+    # Measure search performance (all keys)
+    start = time.time()
+    for k in keys:
+        bpt.search(k)
+    bpt_search = time.time() - start
+    start = time.time()
+    for k in keys:
+        bf.search(k)
+    bf_search = time.time() - start
+
+    # Measure range query performance (full span)
+    lo, hi = min(keys), max(keys)
+    start = time.time()
+    bpt.range_query(lo, hi)
+    bpt_range = time.time() - start
+    start = time.time()
+    bf.range_query(lo, hi)
+    bf_range = time.time() - start
+
+    # Measure memory usage
+    bpt_mem = bpt.get_memory_usage()
+    bf_mem = bf.get_memory_usage()
+
+    # Generate charts
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    out_dir = os.path.join('static', 'visualizations')
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Search time chart
+    plt.figure(figsize=(6,4))
+    plt.bar(['B+ Tree','Brute Force'], [bpt_search*1000, bf_search*1000], color=['#1f77b4','#ff7f0e'])
+    plt.title(f'Search Time ({table_name})')
+    plt.ylabel('Time (ms)')
+    fname_search = f'search_{table_name}.png'
+    plt.savefig(os.path.join(out_dir, fname_search)); plt.close()
+
+    # Range query chart
+    plt.figure(figsize=(6,4))
+    plt.bar(['B+ Tree','Brute Force'], [bpt_range*1000, bf_range*1000], color=['#1f77b4','#ff7f0e'])
+    plt.title(f'Range Query Time ({table_name})')
+    plt.ylabel('Time (ms)')
+    fname_range = f'range_{table_name}.png'
+    plt.savefig(os.path.join(out_dir, fname_range)); plt.close()
+
+    # Memory usage chart
+    plt.figure(figsize=(6,4))
+    plt.bar(['B+ Tree','Brute Force'], [bpt_mem/1024, bf_mem/1024], color=['#1f77b4','#ff7f0e'])
+    plt.title(f'Memory Usage ({table_name})')
+    plt.ylabel('Memory (KB)')
+    fname_mem = f'memory_{table_name}.png'
+    plt.savefig(os.path.join(out_dir, fname_mem)); plt.close()
+
+    images = {
+        'Search Time': f'visualizations/{fname_search}',
+        'Range Query Time': f'visualizations/{fname_range}',
+        'Memory Usage': f'visualizations/{fname_mem}'
+    }
+    return render_template('performance.html', images=images, table_name=table_name)
+
+@app.route('/table/<table_name>/modify_order', methods=['POST'])
+def modify_order(table_name):
+    """Rebuild the table's B+ Tree index using a new order value."""
+    if table_name not in db.list_tables():
+        flash(f"Table {table_name} does not exist", 'error')
+        return redirect(url_for('index'))
+    try:
+        new_order = int(request.form.get('new_order', 0))
+        if new_order < 3:
+            raise ValueError("Order must be at least 3")
+    except Exception as e:
+        flash(f"Invalid order value: {e}", 'error')
+        return redirect(url_for('view_table', table_name=table_name))
+
+    table = db.get_table(table_name)
+    # Extract all existing data
+    records = table.get_all_records()
+    # Build a new tree with the given order and reinsert data
+    new_tree = BPlusTree(order=new_order)
+    for key, value in records:
+        new_tree.insert(key, value)
+    table.index = new_tree
+    flash(f"Rebuilt '{table_name}' with B+ Tree order={new_order}", 'success')
+    # Persist change
+    db.save_database()
+    return redirect(url_for('view_table', table_name=table_name))
 
 if __name__ == '__main__':
     os.makedirs('static/visualizations', exist_ok=True)
