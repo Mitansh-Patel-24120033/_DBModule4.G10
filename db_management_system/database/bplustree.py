@@ -174,12 +174,11 @@ class BPlusTree:
             new_sibling.values = node.values[mid_index:]
             
             # The key to add to parent (copied up)
-            parent_key = new_sibling.keys[0]  
+            parent_key = new_sibling.keys[0]
             
             # Update linked list pointers for leaves
             new_sibling.next_leaf = node.next_leaf
             node.next_leaf = new_sibling
-            
             # Truncate the original node
             node.keys = node.keys[:mid_index]
             node.values = node.values[:mid_index]
@@ -374,7 +373,7 @@ class BPlusTree:
         
         child = node.children[index]
         min_keys = math.ceil(self.order / 2) - 1
-        
+
         # Try borrowing from left sibling
         if index > 0:
             left_sibling = node.children[index-1]
@@ -383,16 +382,16 @@ class BPlusTree:
             if len(left_sibling.keys) > min_keys:
                 self._borrow_from_prev(node, index)
                 return
-        
+
         # Try borrowing from right sibling
-        if index < len(node.children)-1:
-            right_sibling = node.children[index+1]
+        if index < len(node.children) - 1:
+            right_sibling = node.children[index + 1]
             right_sibling.ensure_valid_structure(silent=True)
             
             if len(right_sibling.keys) > min_keys:
                 self._borrow_from_next(node, index)
                 return
-        
+
         # Merge with a sibling
         # If last child, merge with previous
         if index == len(node.children)-1:
@@ -439,7 +438,7 @@ class BPlusTree:
         Borrow a key from the right sibling to prevent underflow.
         """
         child = node.children[index]
-        right_sibling = node.children[index+1]
+        right_sibling = node.children[index + 1]
         
         # For leaf nodes
         if child.is_leaf:
@@ -578,7 +577,7 @@ class BPlusTree:
             print("Ensure the Graphviz binaries are also installed and in your PATH.")
             return None
 
-        dot = graphviz.Digraph(comment='B+ Tree', format='png')
+        dot = graphviz.Digraph(comment='B+ Tree', format='svg')
         dot.attr(splines='false') # Use straight lines for parent-child
 
         if self.root:
@@ -614,7 +613,7 @@ class BPlusTree:
         # print(dot.source) # For debugging the generated DOT language
         try:
             dot.render(filename, view=False) # Saves file, doesn't auto-open
-            print(f"Tree visualization saved to {filename}.png")
+            print(f"Tree visualization saved to {filename}.svg")
         except Exception as e:
              print(f"Error rendering graphviz: {e}")
              print("Ensure Graphviz executables (dot) are installed and in your system's PATH.")
@@ -699,16 +698,3 @@ class BPlusTree:
             return size
         
         return get_node_size(self.root)
-
-    def _split_child(self, node, index=None):
-        """Legacy method that now redirects to the improved _split_node method"""
-        # For simple case (node itself needs splitting)
-        if index is None:
-            return self._split_node(node)
-        
-        # For the case where node.children[index] needs splitting
-        if 0 <= index < len(node.children):
-            return self._split_node(node.children[index])
-        
-        # Invalid index - just check node structure
-        node.ensure_valid_structure(silent=True)

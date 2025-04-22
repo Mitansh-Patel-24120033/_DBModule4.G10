@@ -14,6 +14,39 @@ class Database:
     Manages a collection of tables within the lightweight DBMS.
     Handles table creation, deletion, listing, and persistence.
     """
+    @staticmethod
+    def list_databases(directory='.'):
+        """Return all database names (filenames without .pkl extension) in the directory."""
+        files = [f for f in os.listdir(directory) if f.endswith('.pkl')]
+        return [os.path.splitext(f)[0] for f in files]
+
+    @staticmethod
+    def create_database(name, directory='.'):
+        """Create a new empty database file and return a Database instance."""
+        filename = os.path.join(directory, f"{name}.pkl")
+        if os.path.exists(filename):
+            raise FileExistsError(f"Database '{name}' already exists.")
+        db = Database(filename)
+        db.save_database()
+        return db
+
+    @staticmethod
+    def get_database(name, directory='.'):
+        """Load an existing database file and return its Database instance."""
+        filename = os.path.join(directory, f"{name}.pkl")
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f"Database '{name}' not found.")
+        return Database(filename)
+
+    @staticmethod
+    def delete_database(name, directory='.'):
+        """Delete the database file with the given name."""
+        filename = os.path.join(directory, f"{name}.pkl")
+        if os.path.exists(filename):
+            os.remove(filename)
+            return True
+        return False
+
     def __init__(self, persistence_path=DEFAULT_PERSISTENCE_FILE):
         self.tables = {}  # Dictionary to store tables {table_name: Table_object}
         self.persistence_path = persistence_path
@@ -60,19 +93,25 @@ class Database:
             print(f"Error saving database to '{path}': {e}")
 
     def _load_database(self):
-        """ Loads the database state from the persistence file, if it exists. """
-        if os.path.exists(self.persistence_path):
-            try:
-                with open(self.persistence_path, 'rb') as f:
-                    self.tables = pickle.load(f)
-                print(f"Database state loaded successfully from '{self.persistence_path}'.")
-                # Optional: Re-initialize transient state if needed (e.g., re-link parents if not pickled)
-                self._restore_transient_state()
-            except Exception as e:
-                print(f"Error loading database from '{self.persistence_path}': {e}. Starting with empty database.")
-                self.tables = {} # Start fresh if load fails
-        else:
-            print(f"Persistence file '{self.persistence_path}' not found. Starting with empty database.")
+        """ Loads the database state from the persistence file, if it exists and is non-empty. """
+        path = self.persistence_path
+        # If file missing or empty, start with an empty database
+        if not os.path.exists(path) or os.path.getsize(path) == 0:
+            print(f"Persistence file '{path}' not found or empty. Starting with empty database.")
+            self.tables = {}
+            return
+        # Attempt to load existing data
+        try:
+            with open(path, 'rb') as f:
+                self.tables = pickle.load(f)
+            print(f"Database state loaded successfully from '{path}'.")
+            # Reinitialize any transient state, such as parent pointers
+            self._restore_transient_state()
+        except (EOFError, pickle.UnpicklingError) as e:
+            print(f"Error loading database from '{path}': {e}. Starting with empty database.")
+            self.tables = {}
+        except Exception as e:
+            print(f"Error loading database from '{path}': {e}. Starting with empty database.")
             self.tables = {}
 
     def _restore_transient_state(self):

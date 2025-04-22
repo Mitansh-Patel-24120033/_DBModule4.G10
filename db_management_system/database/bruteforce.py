@@ -1,4 +1,5 @@
 # Appendix B provided code
+import sys
 
 class BruteForceDB:
     """
@@ -68,7 +69,6 @@ class BruteForceDB:
         """
         Basic memory usage estimation (may not be fully accurate for complex objects).
         """
-        import sys
         # Size of the list itself plus size of tuples/keys/values (approx)
         size = sys.getsizeof(self.data)
         if self.data:

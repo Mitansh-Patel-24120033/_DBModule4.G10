@@ -14,240 +14,14 @@ app.secret_key = 'bplus_tree_secret_key'  # For flash messages
 DB_FILE = 'web_database.pkl'
 db = Database(DB_FILE)
 
+# Set up custom database folder
+CUSTOM_DB_DIR = 'customdb'
+os.makedirs(CUSTOM_DB_DIR, exist_ok=True)
+
 @app.route('/')
 def index():
     tables = db.list_tables()
     return render_template('index.html', tables=tables)
-
-@app.route('/create_table', methods=['POST'])
-def create_table():
-    table_name = request.form.get('table_name')
-    order = int(request.form.get('order', 4))
-    
-    if not table_name:
-        flash('Table name is required', 'error')
-        return redirect(url_for('index'))
-    
-    try:
-        # Check if table already exists
-        if table_name in db.list_tables():
-            flash(f'Table {table_name} already exists', 'error')
-        else:
-            db.create_table(table_name, order=order)
-            flash(f'Table {table_name} created successfully', 'success')
-        
-        # Save the database
-        db.save_database()
-    except Exception as e:
-        flash(f'Error creating table: {str(e)}', 'error')
-    
-    return redirect(url_for('index'))
-
-@app.route('/table/<table_name>')
-def view_table(table_name):
-    if table_name not in db.list_tables():
-        flash(f'Table {table_name} does not exist', 'error')
-        return redirect(url_for('index'))
-    
-    table = db.get_table(table_name)
-    data = table.get_all_records()
-    
-    # Generate visualization
-    try:
-        os.makedirs('static/visualizations', exist_ok=True)
-        viz_path = f'static/visualizations/{table_name}_bplus_tree'
-        table.visualize(viz_path)
-        viz_image = f'{viz_path}.png'
-    except Exception as e:
-        flash(f'Error generating visualization: {str(e)}', 'warning')
-        viz_image = None
-    
-    # Pass current tree order for modify-order UI
-    current_order = table.index.order
-    return render_template('table.html', table_name=table_name, data=data, viz_image=viz_image, current_order=current_order)
-
-@app.route('/table/<table_name>/insert', methods=['POST'])
-def insert_record(table_name):
-    if table_name not in db.list_tables():
-        flash(f'Table {table_name} does not exist', 'error')
-        return redirect(url_for('index'))
-    
-    try:
-        # Get form data
-        key = request.form.get('key')
-        value_json = request.form.get('value')
-        
-        # Convert key to integer if possible
-        try:
-            key = int(key)
-        except ValueError:
-            pass
-        
-        # Parse JSON value
-        try:
-            value = json.loads(value_json)
-        except json.JSONDecodeError:
-            flash('Value must be valid JSON', 'error')
-            return redirect(url_for('view_table', table_name=table_name))
-            
-        # Insert into table
-        table = db.get_table(table_name)
-        table.insert(key, value)
-        
-        # Save database
-        db.save_database()
-        
-        flash(f'Record with key {key} inserted successfully', 'success')
-    except Exception as e:
-        flash(f'Error inserting record: {str(e)}', 'error')
-    
-    return redirect(url_for('view_table', table_name=table_name))
-
-@app.route('/table/<table_name>/update', methods=['POST'])
-def update_record(table_name):
-    if table_name not in db.list_tables():
-        flash(f'Table {table_name} does not exist', 'error')
-        return redirect(url_for('index'))
-    
-    try:
-        # Get form data
-        key = request.form.get('key')
-        value_json = request.form.get('value')
-        
-        # Convert key to integer if possible
-        try:
-            key = int(key)
-        except ValueError:
-            pass
-        
-        # Parse JSON value
-        try:
-            value = json.loads(value_json)
-        except json.JSONDecodeError:
-            flash('Value must be valid JSON', 'error')
-            return redirect(url_for('view_table', table_name=table_name))
-            
-        # Update table
-        table = db.get_table(table_name)
-        if table.update(key, value):
-            flash(f'Record with key {key} updated successfully', 'success')
-            db.save_database()
-        else:
-            flash(f'Record with key {key} not found', 'error')
-        
-    except Exception as e:
-        flash(f'Error updating record: {str(e)}', 'error')
-    
-    return redirect(url_for('view_table', table_name=table_name))
-
-@app.route('/table/<table_name>/delete', methods=['POST'])
-def delete_record(table_name):
-    if table_name not in db.list_tables():
-        flash(f'Table {table_name} does not exist', 'error')
-        return redirect(url_for('index'))
-    
-    try:
-        # Get key
-        key = request.form.get('key')
-        
-        # Convert key to integer if possible
-        try:
-            key = int(key)
-        except ValueError:
-            pass
-            
-        # Delete from table
-        table = db.get_table(table_name)
-        if table.delete(key):
-            flash(f'Record with key {key} deleted successfully', 'success')
-            db.save_database()
-        else:
-            flash(f'Record with key {key} not found', 'error')
-        
-    except Exception as e:
-        flash(f'Error deleting record: {str(e)}', 'error')
-    
-    return redirect(url_for('view_table', table_name=table_name))
-
-@app.route('/table/<table_name>/search', methods=['POST'])
-def search_record(table_name):
-    if table_name not in db.list_tables():
-        flash(f'Table {table_name} does not exist', 'error')
-        return redirect(url_for('index'))
-    
-    try:
-        # Get key
-        key = request.form.get('key')
-        
-        # Convert key to integer if possible
-        try:
-            key = int(key)
-        except ValueError:
-            pass
-            
-        # Search in table
-        table = db.get_table(table_name)
-        result = table.select(key)
-        
-        if result:
-            return render_template('search_result.html', table_name=table_name, key=key, value=result)
-        else:
-            flash(f'Record with key {key} not found', 'error')
-        
-    except Exception as e:
-        flash(f'Error searching record: {str(e)}', 'error')
-    
-    return redirect(url_for('view_table', table_name=table_name))
-
-@app.route('/table/<table_name>/range', methods=['POST'])
-def range_query(table_name):
-    if table_name not in db.list_tables():
-        flash(f'Table {table_name} does not exist', 'error')
-        return redirect(url_for('index'))
-    
-    try:
-        # Get range keys
-        start_key = request.form.get('start_key')
-        end_key = request.form.get('end_key')
-        
-        # Convert keys to integers if possible
-        try:
-            start_key = int(start_key)
-        except ValueError:
-            pass
-            
-        try:
-            end_key = int(end_key)
-        except ValueError:
-            pass
-            
-        # Execute range query
-        table = db.get_table(table_name)
-        results = table.range_query(start_key, end_key)
-        
-        return render_template('range_result.html', table_name=table_name, 
-                               start_key=start_key, end_key=end_key, results=results)
-        
-    except Exception as e:
-        flash(f'Error executing range query: {str(e)}', 'error')
-    
-    return redirect(url_for('view_table', table_name=table_name))
-
-@app.route('/delete_table/<table_name>', methods=['POST'])
-def delete_table(table_name):
-    if table_name not in db.list_tables():
-        flash(f'Table {table_name} does not exist', 'error')
-        return redirect(url_for('index'))
-    
-    try:
-        # Delete table
-        db.delete_table(table_name)
-        db.save_database()
-        flash(f'Table {table_name} deleted successfully', 'success')
-    except Exception as e:
-        flash(f'Error deleting table: {str(e)}', 'error')
-    
-    return redirect(url_for('index'))
 
 @app.route('/performance')
 def performance():
@@ -337,25 +111,323 @@ def performance():
     }
     return render_template('performance.html', images=images)
 
-@app.route('/table/<table_name>/performance')
-def table_performance(table_name):
-    if table_name not in db.list_tables():
-        flash(f"Table {table_name} does not exist", 'error')
-        return redirect(url_for('index'))
+# --- API: Database and Table Management ---
+@app.route('/databases', methods=['GET', 'POST'])
+def manage_databases():
+    """Handle DB list page (HTML) and API for listing/creation via JSON."""
+    if request.method == 'GET':
+        # fetch database names from custom directory
+        dbs = Database.list_databases(CUSTOM_DB_DIR)
+        # If browser expects HTML, render page; else return JSON
+        accept = request.accept_mimetypes
+        if accept.accept_html and accept['text/html'] >= accept['application/json']:
+            return render_template('databases.html', databases=dbs)
+        return jsonify({'databases': dbs})
+    # Creation logic: JSON API or HTML form
+    if request.content_type and 'application/json' in request.content_type:
+        # JSON API request
+        data = request.get_json() or {}
+        name = data.get('dbname')
+        if not name:
+            return jsonify({'error': 'Missing "dbname" parameter'}), 400
+        try:
+            Database.create_database(name, CUSTOM_DB_DIR)
+        except FileExistsError as e:
+            return jsonify({'error': str(e)}), 400
+        return jsonify({'message': 'Database created', 'dbname': name}), 201
+    else:
+        # HTML form submission
+        name = request.form.get('dbname')
+        if not name:
+            flash('Database name is required', 'error')
+            return redirect(url_for('manage_databases'))
+        try:
+            Database.create_database(name, CUSTOM_DB_DIR)
+            flash(f"Database '{name}' created successfully", 'success')
+        except FileExistsError as e:
+            flash(str(e), 'error')
+        return redirect(url_for('manage_databases'))
 
-    table = db.get_table(table_name)
-    # Retrieve all records
+@app.route('/databases/<dbname>', methods=['DELETE', 'POST'])
+def api_delete_database(dbname):
+    filename = os.path.join(CUSTOM_DB_DIR, f"{dbname}.pkl")
+    if not os.path.exists(filename):
+        if request.method == 'DELETE':
+            return jsonify({'error': 'Database not found'}), 404
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('manage_databases'))
+    os.remove(filename)
+    if request.method == 'DELETE':
+        return jsonify({'message': 'Database deleted'}), 200
+    flash(f"Database '{dbname}' deleted successfully", 'success')
+    return redirect(url_for('manage_databases'))
+
+@app.route('/databases/<dbname>/tables', methods=['GET'])
+def api_list_tables(dbname):
+    filename = os.path.join(CUSTOM_DB_DIR, f"{dbname}.pkl")
+    # Check if database file exists
+    if not os.path.exists(filename):
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('manage_databases'))
+    dbx = Database(filename)
+    tables = dbx.list_tables()
+    # Render HTML UI for listing tables
+    return render_template('db_tables.html', dbname=dbname, tables=tables)
+
+@app.route('/databases/<dbname>/tables/<table_name>', methods=['GET'])
+def api_table_rows(dbname, table_name):
+    filename = os.path.join(CUSTOM_DB_DIR, f"{dbname}.pkl")
+    # Ensure database exists
+    if not os.path.exists(filename):
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('manage_databases'))
+    dbx = Database(filename)
+    # Ensure table exists in this database
+    if table_name not in dbx.list_tables():
+        flash(f"Table '{table_name}' not found in database '{dbname}'", 'error')
+        return redirect(url_for('api_list_tables', dbname=dbname))
+    table = dbx.get_table(table_name)
+    # Detect if browser expects HTML
+    accept = request.accept_mimetypes
+    if accept.accept_html and accept['text/html'] >= accept['application/json']:
+        # Render same UI as global table view, with DB context
+        data = table.get_all_records()
+        # Generate visualization
+        try:
+            os.makedirs('static/visualizations', exist_ok=True)
+            viz_path = f"static/visualizations/{dbname}_{table_name}_bplus_tree"
+            table.visualize(viz_path)
+            viz_image = f"{viz_path}.svg"
+        except Exception as e:
+            flash(f'Error generating visualization: {str(e)}', 'warning')
+            viz_image = None
+        current_order = table.index.order
+        return render_template('table.html', table_name=table_name, data=data, viz_image=viz_image, current_order=current_order, dbname=dbname)
+    # Fallback to JSON API
+    records = table.get_all_records()
+    rows = [{'key': k, 'value': v} for k, v in records]
+    return jsonify({'rows': rows})
+
+# --- API: Create/Delete tables in a specific database ---
+@app.route('/databases/<dbname>/tables', methods=['POST'])
+def api_create_table_in_db(dbname):
+    filename = os.path.join(CUSTOM_DB_DIR, f"{dbname}.pkl")
+    # Ensure database file exists
+    if not os.path.exists(filename):
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('api_list_tables', dbname=dbname))
+
+    # HTML Form submission (create via UI)
+    if 'table_name' in request.form:
+        table_name = request.form['table_name']
+        try:
+            order = int(request.form.get('order', 4) or 4)
+        except ValueError:
+            order = 4
+        dbx = Database(filename)
+        if table_name in dbx.list_tables():
+            flash(f"Table '{table_name}' already exists", 'error')
+        else:
+            try:
+                dbx.create_table(table_name, order=order)
+                dbx.save_database()
+                flash(f"Table '{table_name}' created successfully", 'success')
+            except Exception as e:
+                flash(f"Error creating table: {str(e)}", 'error')
+        return redirect(url_for('api_list_tables', dbname=dbname))
+
+    # JSON API submission (create via API)
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'Missing JSON payload'}), 400
+    table_name = data.get('table_name')
+    order = int(data.get('order', 4))
+    if not table_name:
+        return jsonify({'error': 'Missing "table_name" parameter'}), 400
+    dbx = Database(filename)
+    if table_name in dbx.list_tables():
+        return jsonify({'error': 'Table already exists'}), 400
+    dbx.create_table(table_name, order=order)
+    dbx.save_database()
+    return jsonify({'message': 'Table created', 'table': table_name}), 201
+
+@app.route('/databases/<dbname>/tables/<table_name>', methods=['DELETE', 'POST'])
+def api_delete_table_in_db(dbname, table_name):
+    filename = os.path.join(CUSTOM_DB_DIR, f"{dbname}.pkl")
+    # Check if database exists
+    if not os.path.exists(filename):
+        if request.method == 'DELETE':
+            return jsonify({'error': 'Database not found'}), 404
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('manage_databases'))
+    dbx = Database(filename)
+    # Check if table exists
+    if table_name not in dbx.list_tables():
+        if request.method == 'DELETE':
+            return jsonify({'error': 'Table not found'}), 404
+        flash(f"Table '{table_name}' not found in database '{dbname}'", 'error')
+        return redirect(url_for('api_list_tables', dbname=dbname))
+    # Perform deletion
+    dbx.delete_table(table_name)
+    dbx.save_database()
+    if request.method == 'DELETE':
+        return jsonify({'message': 'Table deleted', 'table': table_name}), 200
+    flash(f"Table '{table_name}' deleted successfully", 'success')
+    return redirect(url_for('api_list_tables', dbname=dbname))
+
+# --- Record-level CRUD in a specific database ---
+@app.route('/databases/<dbname>/tables/<table_name>/insert', methods=['POST'])
+def insert_record_in_db(dbname, table_name):
+    try:
+        dbx = Database.get_database(dbname, CUSTOM_DB_DIR)
+    except FileNotFoundError:
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('manage_databases'))
+    table = dbx.get_table(table_name)
+    if not table:
+        flash(f"Table '{table_name}' not found", 'error')
+        return redirect(url_for('api_list_tables', dbname=dbname))
+    key = request.form.get('key')
+    value_json = request.form.get('value')
+    try:
+        key = int(key)
+    except ValueError:
+        pass
+    try:
+        value = json.loads(value_json)
+    except Exception:
+        flash('Value must be valid JSON', 'error')
+        return redirect(url_for('api_table_rows', dbname=dbname, table_name=table_name))
+    table.insert(key, value)
+    dbx.save_database()
+    flash(f'Record with key {key} inserted', 'success')
+    return redirect(url_for('api_table_rows', dbname=dbname, table_name=table_name))
+
+@app.route('/databases/<dbname>/tables/<table_name>/update', methods=['POST'])
+def update_record_in_db(dbname, table_name):
+    try:
+        dbx = Database.get_database(dbname, CUSTOM_DB_DIR)
+    except FileNotFoundError:
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('manage_databases'))
+    table = dbx.get_table(table_name)
+    if not table:
+        flash(f"Table '{table_name}' not found", 'error')
+        return redirect(url_for('api_list_tables', dbname=dbname))
+    key = request.form.get('key')
+    value_json = request.form.get('value')
+    try:
+        key = int(key)
+    except ValueError:
+        pass
+    try:
+        value = json.loads(value_json)
+    except Exception:
+        flash('Value must be valid JSON', 'error')
+        return redirect(url_for('api_table_rows', dbname=dbname, table_name=table_name))
+    if table.update(key, value):
+        dbx.save_database()
+        flash(f'Record with key {key} updated', 'success')
+    else:
+        flash(f'Record with key {key} not found', 'error')
+    return redirect(url_for('api_table_rows', dbname=dbname, table_name=table_name))
+
+@app.route('/databases/<dbname>/tables/<table_name>/delete', methods=['POST'])
+def delete_record_in_db(dbname, table_name):
+    try:
+        dbx = Database.get_database(dbname, CUSTOM_DB_DIR)
+    except FileNotFoundError:
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('manage_databases'))
+    table = dbx.get_table(table_name)
+    if not table:
+        flash(f"Table '{table_name}' not found", 'error')
+        return redirect(url_for('api_list_tables', dbname=dbname))
+    key = request.form.get('key')
+    try:
+        key = int(key)
+    except ValueError:
+        pass
+    if table.delete(key):
+        dbx.save_database()
+        flash(f'Record with key {key} deleted', 'success')
+    else:
+        flash(f'Record with key {key} not found', 'error')
+    return redirect(url_for('api_table_rows', dbname=dbname, table_name=table_name))
+
+@app.route('/databases/<dbname>/tables/<table_name>/search', methods=['POST'])
+def search_record_in_db(dbname, table_name):
+    try:
+        dbx = Database.get_database(dbname, CUSTOM_DB_DIR)
+    except FileNotFoundError:
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('manage_databases'))
+    table = dbx.get_table(table_name)
+    if not table:
+        flash(f"Table '{table_name}' not found", 'error')
+        return redirect(url_for('api_list_tables', dbname=dbname))
+    key = request.form.get('key')
+    try:
+        key = int(key)
+    except ValueError:
+        pass
+    result = table.select(key)
+    if result is not None:
+        return render_template('search_result.html', table_name=table_name, key=key, value=result, dbname=dbname)
+    else:
+        flash(f'Record with key {key} not found', 'error')
+        return redirect(url_for('api_table_rows', dbname=dbname, table_name=table_name))
+
+@app.route('/databases/<dbname>/tables/<table_name>/range', methods=['POST'])
+def range_query_in_db(dbname, table_name):
+    try:
+        dbx = Database.get_database(dbname, CUSTOM_DB_DIR)
+    except FileNotFoundError:
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('manage_databases'))
+    table = dbx.get_table(table_name)
+    if not table:
+        flash(f"Table '{table_name}' not found", 'error')
+        return redirect(url_for('api_list_tables', dbname=dbname))
+    start_key = request.form.get('start_key')
+    end_key = request.form.get('end_key')
+    try:
+        start_key = int(start_key)
+    except ValueError:
+        pass
+    try:
+        end_key = int(end_key)
+    except ValueError:
+        pass
+    results = table.range_query(start_key, end_key)
+    return render_template('range_result.html', table_name=table_name, start_key=start_key, end_key=end_key, results=results, dbname=dbname)
+
+# --- Performance for a specific database table ---
+@app.route('/databases/<dbname>/tables/<table_name>/performance')
+def table_performance_in_db(dbname, table_name):
+    # Ensure database exists
+    filename = os.path.join(CUSTOM_DB_DIR, f"{dbname}.pkl")
+    if not os.path.exists(filename):
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('manage_databases'))
+    # Load DB and table
+    try:
+        dbx = Database.get_database(dbname, CUSTOM_DB_DIR)
+    except FileNotFoundError:
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('manage_databases'))
+    if table_name not in dbx.list_tables():
+        flash(f"Table '{table_name}' not found in database '{dbname}'", 'error')
+        return redirect(url_for('api_list_tables', dbname=dbname))
+    table = dbx.get_table(table_name)
+    # Prepare data structures
     data = table.get_all_records()
     keys = [k for k, _ in data]
-    # Build a fresh BruteForceDB with same data
     bf = BruteForceDB()
     for k, v in data:
         bf.insert(k, v)
-
-    # B+ Tree instance is table.index (already loaded)
     bpt = table.index
-
-    # Measure search performance (all keys)
+    # Measure search performance
     start = time.time()
     for k in keys:
         bpt.search(k)
@@ -365,48 +437,47 @@ def table_performance(table_name):
         bf.search(k)
     bf_search = time.time() - start
 
-    # Measure range query performance (full span)
-    lo, hi = min(keys), max(keys)
-    start = time.time()
-    bpt.range_query(lo, hi)
-    bpt_range = time.time() - start
-    start = time.time()
-    bf.range_query(lo, hi)
-    bf_range = time.time() - start
+    # Measure range query performance
+    lo, hi = min(keys) if keys else (None, None), max(keys) if keys else (None, None)
+    if keys:
+        start = time.time(); bpt.range_query(lo, hi)
+        bpt_range = time.time() - start
+        start = time.time(); bf.range_query(lo, hi)
+        bf_range = time.time() - start
+    else:
+        bpt_range = bf_range = 0
 
     # Measure memory usage
     bpt_mem = bpt.get_memory_usage()
     bf_mem = bf.get_memory_usage()
 
     # Generate charts
-    import matplotlib
-    matplotlib.use('Agg')
+    import matplotlib; matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     out_dir = os.path.join('static', 'visualizations')
     os.makedirs(out_dir, exist_ok=True)
-
     # Search time chart
     plt.figure(figsize=(6,4))
     plt.bar(['B+ Tree','Brute Force'], [bpt_search*1000, bf_search*1000], color=['#1f77b4','#ff7f0e'])
-    plt.title(f'Search Time ({table_name})')
+    plt.title(f'Search Time ({dbname}.{table_name})')
     plt.ylabel('Time (ms)')
-    fname_search = f'search_{table_name}.png'
+    fname_search = f'search_{dbname}_{table_name}.png'
     plt.savefig(os.path.join(out_dir, fname_search)); plt.close()
 
     # Range query chart
     plt.figure(figsize=(6,4))
     plt.bar(['B+ Tree','Brute Force'], [bpt_range*1000, bf_range*1000], color=['#1f77b4','#ff7f0e'])
-    plt.title(f'Range Query Time ({table_name})')
+    plt.title(f'Range Query Time ({dbname}.{table_name})')
     plt.ylabel('Time (ms)')
-    fname_range = f'range_{table_name}.png'
+    fname_range = f'range_{dbname}_{table_name}.png'
     plt.savefig(os.path.join(out_dir, fname_range)); plt.close()
 
     # Memory usage chart
     plt.figure(figsize=(6,4))
     plt.bar(['B+ Tree','Brute Force'], [bpt_mem/1024, bf_mem/1024], color=['#1f77b4','#ff7f0e'])
-    plt.title(f'Memory Usage ({table_name})')
+    plt.title(f'Memory Usage ({dbname}.{table_name})')
     plt.ylabel('Memory (KB)')
-    fname_mem = f'memory_{table_name}.png'
+    fname_mem = f'memory_{dbname}_{table_name}.png'
     plt.savefig(os.path.join(out_dir, fname_mem)); plt.close()
 
     images = {
@@ -414,34 +485,39 @@ def table_performance(table_name):
         'Range Query Time': f'visualizations/{fname_range}',
         'Memory Usage': f'visualizations/{fname_mem}'
     }
-    return render_template('performance.html', images=images, table_name=table_name)
+    return render_template('performance.html', images=images, table_name=table_name, dbname=dbname)
 
-@app.route('/table/<table_name>/modify_order', methods=['POST'])
-def modify_order(table_name):
-    """Rebuild the table's B+ Tree index using a new order value."""
-    if table_name not in db.list_tables():
-        flash(f"Table {table_name} does not exist", 'error')
-        return redirect(url_for('index'))
+# --- Modify order for a specific database table ---
+@app.route('/databases/<dbname>/tables/<table_name>/modify_order', methods=['POST'])
+def modify_order_in_db(dbname, table_name):
+    # Ensure database exists
+    filename = os.path.join(CUSTOM_DB_DIR, f"{dbname}.pkl")
+    if not os.path.exists(filename):
+        flash(f"Database '{dbname}' not found", 'error')
+        return redirect(url_for('manage_databases'))
+    # Parse new order
     try:
         new_order = int(request.form.get('new_order', 0))
         if new_order < 3:
             raise ValueError("Order must be at least 3")
     except Exception as e:
         flash(f"Invalid order value: {e}", 'error')
-        return redirect(url_for('view_table', table_name=table_name))
-
-    table = db.get_table(table_name)
-    # Extract all existing data
+        return redirect(url_for('api_table_rows', dbname=dbname, table_name=table_name))
+    # Load DB and table
+    dbx = Database.get_database(dbname, CUSTOM_DB_DIR)
+    if table_name not in dbx.list_tables():
+        flash(f"Table '{table_name}' not found in database '{dbname}'", 'error')
+        return redirect(url_for('api_list_tables', dbname=dbname))
+    table = dbx.get_table(table_name)
+    # Rebuild the index
     records = table.get_all_records()
-    # Build a new tree with the given order and reinsert data
     new_tree = BPlusTree(order=new_order)
     for key, value in records:
         new_tree.insert(key, value)
     table.index = new_tree
-    flash(f"Rebuilt '{table_name}' with B+ Tree order={new_order}", 'success')
-    # Persist change
-    db.save_database()
-    return redirect(url_for('view_table', table_name=table_name))
+    dbx.save_database()
+    flash(f"Rebuilt '{table_name}' with order={new_order}", 'success')
+    return redirect(url_for('api_table_rows', dbname=dbname, table_name=table_name))
 
 if __name__ == '__main__':
     os.makedirs('static/visualizations', exist_ok=True)

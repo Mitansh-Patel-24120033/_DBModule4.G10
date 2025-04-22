@@ -28,7 +28,9 @@
 </div>
 
 <div class="mt-4">
-    <a href="{{ url_for('view_table', table_name=table_name) }}" class="btn btn-primary">Back to Table</a>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Tables</a>
+    {% if dbname %}
+    <a href="{{ url_for('api_table_rows', dbname=dbname, table_name=table_name) }}" class="btn btn-primary">Back to Table</a>
+    <a href="{{ url_for('api_list_tables', dbname=dbname) }}" class="btn btn-secondary">Back to Tables</a>
+    {% endif %}
 </div>
 {% endblock %} 

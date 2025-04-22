@@ -1,12 +1,12 @@
-# Core libraries for the assignment
-matplotlib>=3.5.0
-graphviz>=0.20.1
-flask>=2.0.0
-jupyter>=1.0.0
+# Core libraries for the application
+jinja2>=3.0.0            # Flask templating engine
+flask>=2.0.0             # Web framework
+matplotlib>=3.5.0        # Plotting and chart generation
+graphviz>=0.20.1         # B+ tree visualization
 
-# Optional, but often useful with matplotlib
-numpy
-
-# Optional: For memory profiling (if you choose to implement it)
-# psutil
-# memory_profiler
+# Optional libraries
+numpy>=1.23.0             # Array support for matplotlib
+jupyter>=1.0.0            # For report notebook
+# For memory profiling (optional)
+psutil>=5.9.0
+memory_profiler>=0.61.0

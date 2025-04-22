@@ -20,9 +20,9 @@
 </div>
 
 <div class="mt-4">
-    {% if table_name %}
-        <a href="{{ url_for('view_table', table_name=table_name) }}" class="btn btn-secondary">Back to {{ table_name }}</a>
-        <a href="{{ url_for('index') }}" class="btn btn-primary ms-2">Back to Home</a>
+    {% if table_name and dbname %}
+        <a href="{{ url_for('api_table_rows', dbname=dbname, table_name=table_name) }}" class="btn btn-secondary">Back to {{ table_name }}</a>
+        <a href="{{ url_for('api_list_tables', dbname=dbname) }}" class="btn btn-primary ms-2">Back to Tables</a>
     {% else %}
         <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Home</a>
     {% endif %}

@@ -5,7 +5,6 @@ This script creates tables, performs operations, and visualizes the B+ Tree stru
 """
 
 import os
-import sys
 import time
 import random
 import matplotlib
@@ -16,63 +15,54 @@ from database.db_manager import Database
 from database.bplustree import BPlusTree
 from database.bruteforce import BruteForceDB
 
+# Number of rows to populate in the tables
+rowN = 100
+# Persist demo database under customdb/
+CUSTOM_DB_DIR = 'customdb'
+os.makedirs(CUSTOM_DB_DIR, exist_ok=True)
+DB_FILE = os.path.join(CUSTOM_DB_DIR, 'demo_database.pkl')
+
 def demonstrate_tables():
     """Create sample tables and demonstrate basic operations."""
     print("=== Creating and testing tables ===")
     
     # Create a database (overwrite any existing demo_database.pkl)
-    if os.path.exists("demo_database.pkl"):
-        os.remove("demo_database.pkl")
-        print("Existing demo database removed. Starting fresh with demo_database.pkl.")
-    db = Database("demo_database.pkl")
+    if os.path.exists(DB_FILE):
+        os.remove(DB_FILE)
+        print(f"Existing demo database removed. Starting fresh at {DB_FILE}.")
+    db = Database(DB_FILE)
     
     # Create tables (customers and orders)
     customers_table = db.create_table("customers", order=4)
     orders_table = db.create_table("orders", order=4)
     
     # Add data to the customers table
-    print("\nPopulating customers table...")
-    customers_data = [
-        (1, {"customer_name": "Alice Smith", "Age": 30, "customer_email": "alice@example.com", "customer_phone": "111-111-1111", "customer_address": "123 Main St", "customer_image": None}),
-        (2, {"customer_name": "Bob Jones", "Age": 45, "customer_email": "bob@example.com", "customer_phone": "222-222-2222", "customer_address": "456 Oak Ave", "customer_image": None}),
-        (3, {"customer_name": "Carol Taylor", "Age": 28, "customer_email": "carol@example.com", "customer_phone": "333-333-3333", "customer_address": "789 Pine Rd", "customer_image": None}),
-        (4, {"customer_name": "David Brown", "Age": 52, "customer_email": "david@example.com", "customer_phone": "444-444-4444", "customer_address": "135 Elm St", "customer_image": None}),
-        (5, {"customer_name": "Eva Green", "Age": 35, "customer_email": "eva@example.com", "customer_phone": "555-555-5555", "customer_address": "246 Maple Dr", "customer_image": None}),
-        (6, {"customer_name": "Frank White", "Age": 40, "customer_email": "frank@example.com", "customer_phone": "666-666-6666", "customer_address": "358 Cedar Ln", "customer_image": None}),
-        (7, {"customer_name": "Grace Black", "Age": 27, "customer_email": "grace@example.com", "customer_phone": "777-777-7777", "customer_address": "468 Birch Blvd", "customer_image": None}),
-        (8, {"customer_name": "Henry Wood", "Age": 60, "customer_email": "henry@example.com", "customer_phone": "888-888-8888", "customer_address": "579 Spruce Ct", "customer_image": None}),
-        (9, {"customer_name": "Ivy Hill", "Age": 33, "customer_email": "ivy@example.com", "customer_phone": "999-999-9999", "customer_address": "680 Willow Way", "customer_image": None}),
-        (10, {"customer_name": "Jack King", "Age": 47, "customer_email": "jack@example.com", "customer_phone": "101-010-1010", "customer_address": "791 Aspen Pl", "customer_image": None}),
-        (11, {"customer_name": "Kim Lee", "Age": 29, "customer_email": "kim@example.com", "customer_phone": "121-212-1212", "customer_address": "802 Chestnut Cir", "customer_image": None}),
-        (12, {"customer_name": "Leo Scott", "Age": 55, "customer_email": "leo@example.com", "customer_phone": "131-313-1313", "customer_address": "913 Redwood Trl", "customer_image": None}),
-        (13, {"customer_name": "Mia Adams", "Age": 31, "customer_email": "mia@example.com", "customer_phone": "141-414-1414", "customer_address": "102 Fir St", "customer_image": None}),
-        (14, {"customer_name": "Noah Clark", "Age": 41, "customer_email": "noah@example.com", "customer_phone": "151-515-1515", "customer_address": "203 Poplar Rd", "customer_image": None}),
-        (15, {"customer_name": "Olga Evans", "Age": 38, "customer_email": "olga@example.com", "customer_phone": "161-616-1616", "customer_address": "304 Cypress Ln", "customer_image": None})
-    ]
-    for cust_id, cust_info in customers_data:
-        customers_table.insert(cust_id, cust_info)
+    print(f"\nPopulating customers table with {rowN} entries...")
+    for i in range(1, rowN+1):
+        cust_info = {
+            "customer_name": f"Customer {i}",
+            "Age": random.randint(20, 70),
+            "customer_email": f"customer{i}@example.com",
+            "customer_phone": f"{random.randint(100, 999)}-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
+            "customer_address": f"{random.randint(100, 999)} Main St",
+            "customer_image": None
+        }
+        customers_table.insert(i, cust_info)
     
     # Add data to the orders table
-    print("\nPopulating orders table...")
-    orders_data = [
-        (1, {"customer_id": 1, "order_status": "Pending",   "Total_Amount": 100.00, "Pickup_Date": "2023-01-01", "Delivery_Date": "2023-01-05"}),
-        (2, {"customer_id": 2, "order_status": "Delivered", "Total_Amount": 250.50, "Pickup_Date": "2023-02-10", "Delivery_Date": "2023-02-15"}),
-        (3, {"customer_id": 3, "order_status": "Picked up", "Total_Amount": 75.25,  "Pickup_Date": "2023-03-05", "Delivery_Date": "2023-03-06"}),
-        (4, {"customer_id": 4, "order_status": "Pending",   "Total_Amount": 125.75, "Pickup_Date": "2023-04-12", "Delivery_Date": None}),
-        (5, {"customer_id": 5, "order_status": "Delivered", "Total_Amount": 300.00, "Pickup_Date": "2023-05-20", "Delivery_Date": "2023-05-25"}),
-        (6, {"customer_id": 6, "order_status": "Picked up", "Total_Amount": 50.00,  "Pickup_Date": "2023-06-15", "Delivery_Date": "2023-06-16"}),
-        (7, {"customer_id": 7, "order_status": "Pending",   "Total_Amount": 80.80,  "Pickup_Date": "2023-07-01", "Delivery_Date": None}),
-        (8, {"customer_id": 8, "order_status": "Delivered", "Total_Amount": 220.40, "Pickup_Date": "2023-08-22", "Delivery_Date": "2023-08-27"}),
-        (9, {"customer_id": 9, "order_status": "Picked up", "Total_Amount": 60.60,  "Pickup_Date": "2023-09-10", "Delivery_Date": "2023-09-11"}),
-        (10, {"customer_id": 10, "order_status": "Pending",   "Total_Amount": 150.15, "Pickup_Date": "2023-10-05", "Delivery_Date": None}),
-        (11, {"customer_id": 11, "order_status": "Delivered", "Total_Amount": 175.75, "Pickup_Date": "2023-11-12", "Delivery_Date": "2023-11-17"}),
-        (12, {"customer_id": 12, "order_status": "Picked up", "Total_Amount": 90.90,  "Pickup_Date": "2023-12-01", "Delivery_Date": "2023-12-02"}),
-        (13, {"customer_id": 13, "order_status": "Pending",   "Total_Amount": 110.10, "Pickup_Date": "2024-01-03", "Delivery_Date": None}),
-        (14, {"customer_id": 14, "order_status": "Delivered", "Total_Amount": 130.30, "Pickup_Date": "2024-02-14", "Delivery_Date": "2024-02-19"}),
-        (15, {"customer_id": 15, "order_status": "Picked up", "Total_Amount": 140.40, "Pickup_Date": "2024-03-20", "Delivery_Date": "2024-03-21"})
-    ]
-    for order_id, order_info in orders_data:
-        orders_table.insert(order_id, order_info)
+    print(f"\nPopulating orders table with {rowN} entries...")
+    for i in range(1, rowN+1):
+        status = random.choice(["Pending", "Delivered", "Picked up"])
+        pickup_date = f"2023-{random.randint(1,12):02d}-{random.randint(1,28):02d}"
+        delivery_date = None if status == "Pending" else f"2023-{random.randint(1,12):02d}-{random.randint(1,28):02d}"
+        order_info = {
+            "customer_id": random.randint(1, 100),
+            "order_status": status,
+            "Total_Amount": round(random.uniform(50.0, 500.0), 2),
+            "Pickup_Date": pickup_date,
+            "Delivery_Date": delivery_date
+        }
+        orders_table.insert(i, order_info)
     
     # Generate visualizations of the B+ trees
     print("\nGenerating B+ Tree visualizations...")
@@ -81,29 +71,31 @@ def demonstrate_tables():
     # Visualize customers table B+ tree
     try:
         customers_table.visualize("visualizations/customers_bplus_tree")
-        print("Customers B+ Tree visualization saved to visualizations/customers_bplus_tree.png")
+        print("Customers B+ Tree visualization saved to visualizations/customers_bplus_tree.svg")
     except Exception as e:
         print(f"Error visualizing customers table: {e}")
     
     # Visualize orders table B+ tree
     try:
         orders_table.visualize("visualizations/orders_bplus_tree")
-        print("Orders B+ Tree visualization saved to visualizations/orders_bplus_tree.png")
+        print("Orders B+ Tree visualization saved to visualizations/orders_bplus_tree.svg")
     except Exception as e:
         print(f"Error visualizing orders table: {e}")
     
     # Demonstrate select operation
+    mid = rowN // 2 or 1
     print("\nSelecting data:")
-    customer = customers_table.select(3)
-    print(f"Customer with ID 3: {customer}")
+    customer = customers_table.select(mid)
+    print(f"Customer with ID {mid}: {customer}")
     
-    order = orders_table.select(3)
-    print(f"Order with ID 3: {order}")
+    order = orders_table.select(mid)
+    print(f"Order with ID {mid}: {order}")
     
     # Demonstrate range query
+    lo, hi = 1, min(2, rowN)
     print("\nRange queries:")
-    cs_orders = orders_table.range_query(1, 2)
-    print("Orders with IDs 1-2:")
+    cs_orders = orders_table.range_query(lo, hi)
+    print(f"Orders with IDs {lo}-{hi}:")
     for order_id, order_info in cs_orders:
         print(f"  ID: {order_id}, Status: {order_info['order_status']}")
     
@@ -114,15 +106,16 @@ def demonstrate_tables():
     print(f"Updated customer with ID 1: {updated_customer}")
     
     # Demonstrate delete
+    del_key = min(5, rowN)
     print("\nDeleting data:")
-    customers_table.delete(5)
-    deleted_customer = customers_table.select(5)
-    print(f"Customer with ID 5 after deletion: {deleted_customer}")
+    customers_table.delete(del_key)
+    deleted_customer = customers_table.select(del_key)
+    print(f"Customer with ID {del_key} after deletion: {deleted_customer}")
     
     # Generate visualization after modifications
     try:
         customers_table.visualize("visualizations/customers_bplus_tree_after")
-        print("Modified Customers B+ Tree visualization saved to visualizations/customers_bplus_tree_after.png")
+        print("Modified Customers B+ Tree visualization saved to visualizations/customers_bplus_tree_after.svg")
     except Exception as e:
         print(f"Error visualizing modified customers table: {e}")
     
@@ -132,7 +125,7 @@ def demonstrate_tables():
     
     # Demonstrate persistence by reloading
     print("\nReloading database to verify persistence...")
-    loaded_db = Database("demo_database.pkl")
+    loaded_db = Database(DB_FILE)
     loaded_tables = loaded_db.list_tables()
     print(f"Tables in loaded database: {loaded_tables}")
 
@@ -160,106 +153,91 @@ def run_performance_comparison():
     
     for data_size in set_sizes:
         print(f"\n--- Testing with {data_size} records ---")
-        
-        # Set up data structures
+
+        # Set up data structures for this sample size
         bplus_tree = BPlusTree(order=10)
         brute_force = BruteForceDB()
-        
+
         # Generate test data
         keys = random.sample(range(data_size * 5), data_size)
         values = [f"value_{k}" for k in keys]
-        
-        # Compare insertion
+
+        # Compare insertion performance
         print("\nComparing insertion performance:")
-        
         start_time = time.time()
-        for i, key in enumerate(keys):
-            bplus_tree.insert(key, values[i])
-        bplus_insert_time = time.time() - start_time
-        results['bplus_insert'].append(bplus_insert_time)
-        print(f"B+ Tree insertion time: {bplus_insert_time:.6f} seconds")
-        
+        for key in keys:
+            bplus_tree.insert(key, values[keys.index(key)])
+        insert_time = time.time() - start_time
+        results['bplus_insert'].append(insert_time)
+        print(f"Total B+ Tree insertion time: {insert_time:.6f} seconds")
+
         start_time = time.time()
-        for i, key in enumerate(keys):
-            brute_force.insert(key, values[i])
+        for key in keys:
+            brute_force.insert(key, values[keys.index(key)])
         brute_insert_time = time.time() - start_time
         results['brute_insert'].append(brute_insert_time)
-        print(f"Brute Force insertion time: {brute_insert_time:.6f} seconds")
-        
-        # Visualize the performance B+ tree for the largest dataset only
-        if data_size == max(set_sizes):
-            # Skip visualizing the tree as it can be resource-intensive
-            # try:
-            #     os.makedirs("visualizations", exist_ok=True)
-            #     bplus_tree.visualize_tree("visualizations/performance_bplus_tree")
-            #     print("\nPerformance B+ Tree visualization saved to visualizations/performance_bplus_tree.png")
-            # except Exception as e:
-            #     print(f"\nError visualizing performance B+ tree: {e}")
-            pass
-        
-        # Compare search
+        print(f"Total Brute Force insertion time: {brute_insert_time:.6f} seconds")
+
+        # Compare search performance
         print("\nComparing search performance:")
         search_keys = random.sample(keys, min(100, data_size))
-        
         start_time = time.time()
         for key in search_keys:
             bplus_tree.search(key)
-        bplus_search_time = time.time() - start_time
-        results['bplus_search'].append(bplus_search_time)
-        print(f"B+ Tree search time: {bplus_search_time:.6f} seconds")
-        
+        search_time = time.time() - start_time
+        results['bplus_search'].append(search_time)
+        print(f"Total B+ Tree search time for {len(search_keys)} lookups: {search_time:.6f} seconds")
+
         start_time = time.time()
         for key in search_keys:
             brute_force.search(key)
         brute_search_time = time.time() - start_time
         results['brute_search'].append(brute_search_time)
-        print(f"Brute Force search time: {brute_search_time:.6f} seconds")
-        
-        # Compare deletion (new)
+        print(f"Total Brute Force search time for {len(search_keys)} lookups: {brute_search_time:.6f} seconds")
+
+        # Compare deletion performance
         print("\nComparing deletion performance:")
         delete_keys = random.sample(keys, min(100, data_size))
-        
         start_time = time.time()
         for key in delete_keys:
             bplus_tree.delete(key)
         bplus_delete_time = time.time() - start_time
         results['bplus_delete'].append(bplus_delete_time)
         print(f"B+ Tree deletion time: {bplus_delete_time:.6f} seconds")
-        
+
         start_time = time.time()
         for key in delete_keys:
             brute_force.delete(key)
         brute_delete_time = time.time() - start_time
         results['brute_delete'].append(brute_delete_time)
         print(f"Brute Force deletion time: {brute_delete_time:.6f} seconds")
-        
-        # Compare range query
+
+        # Compare range query performance
         print("\nComparing range query performance:")
         range_start = data_size // 4
         range_end = range_start + data_size // 2
-        
         start_time = time.time()
         bplus_result = bplus_tree.range_query(range_start, range_end)
         bplus_range_time = time.time() - start_time
         results['bplus_range'].append(bplus_range_time)
         print(f"B+ Tree range query time: {bplus_range_time:.6f} seconds, found {len(bplus_result)} results")
-        
+
         start_time = time.time()
         brute_result = brute_force.range_query(range_start, range_end)
         brute_range_time = time.time() - start_time
         results['brute_range'].append(brute_range_time)
         print(f"Brute Force range query time: {brute_range_time:.6f} seconds, found {len(brute_result)} results")
-        
+
         # Compare memory usage
         print("\nComparing memory usage:")
         bplus_memory = bplus_tree.get_memory_usage()
         results['bplus_memory'].append(bplus_memory)
         print(f"B+ Tree memory usage: {bplus_memory} bytes")
-        
+
         brute_memory = brute_force.get_memory_usage()
         results['brute_memory'].append(brute_memory)
         print(f"Brute Force memory usage: {brute_memory} bytes")
-    
+
     # Generate performance visualizations
     try:
         os.makedirs("visualizations", exist_ok=True)
