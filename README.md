@@ -51,16 +51,17 @@ pip install -r requirements.txt
 
 ### Demo Script
 
-Run a demonstration of table creation, sample data insertion, basic CRUD, tree visualization, and performance benchmarking:
+Run a demonstration of table creation, sample data insertion (controlled by `rowN`), basic CRUD, tree visualization (SVG), and performance benchmarking:
 
 ```bash
+# Optionally set `rowN` for number of demo rows (default in script)
 python run_demo.py
 ```
 
 Outputs:
-- Sample tables (`students`, `courses`) with 15 records each
+- Demo tables under `customdb/demo_database.pkl` with `rowN` records each
 - CRUD operation logs
-- B+ tree PNGs in `visualizations/`
+- B+ tree SVGs in `visualizations/`
 - Performance charts (insertion, search, delete, range, memory) in `visualizations/`
 
 ### Web Interface
@@ -88,7 +89,7 @@ Run all cells to regenerate charts and visualizations.
 
 ## Performance Testing
 
-Benchmarks are run for dataset sizes `[100, 500, 1000, 5000]`. Metrics measured:
+Benchmarks are run for dataset sizes `[500, 1000, 5000, 10000]`. Metrics measured:
 - Insertion time
 - Search time
 - Deletion time
@@ -111,7 +112,7 @@ Charts are saved under `visualizations/` for comparison between the B+ tree and 
 │   └── table.py            # Table abstraction (uses BPlusTree)
 ├── templates/             # HTML templates for Flask
 ├── static/                # Static assets & visualizations
-│   └── visualizations/     # Generated PNG files
+│   └── visualizations/     # Generated SVGs (trees) and PNG charts
 ├── report.ipynb           # Jupyter notebook report template
 ├── requirements.txt       # Python dependencies
 └── README.md              # This file
