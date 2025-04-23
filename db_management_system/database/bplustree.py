@@ -1,4 +1,5 @@
 import math
+import bisect # Import bisect for optimized searching
 # Import graphviz if you have it installed, otherwise handle the optional dependency
 try:
     import graphviz
@@ -74,11 +75,9 @@ class BPlusTree:
             node.ensure_valid_structure(silent=True)
         
         while not node.is_leaf:
-            # Find the first key greater than the target key
-            i = 0
-            while i < len(node.keys) and key >= node.keys[i]:
-                i += 1
-                
+            # Use bisect_right to find the insertion point, which gives the correct child index
+            i = bisect.bisect_right(node.keys, key)
+            
             # Get the appropriate child - should always be valid now
             child = node.children[i]
             
@@ -94,16 +93,16 @@ class BPlusTree:
         """ Search for a key in the B+ tree. Return associated value if found, else None """
         leaf_node = self._find_leaf(key)
         
-        # Simple linear search within the leaf node
-        try:
-            index = leaf_node.keys.index(key)
-            # Verify that the values list has enough elements
+        # Use bisect_left to find the potential index of the key
+        index = bisect.bisect_left(leaf_node.keys, key)
+
+        # Check if the key actually exists at that index
+        if index < len(leaf_node.keys) and leaf_node.keys[index] == key:
+            # Verify that the values list has the corresponding value
             if index < len(leaf_node.values):
-                return leaf_node.values[index]
-            else:
-                return None
-        except ValueError:
-            return None # Key not found
+                 return leaf_node.values[index]
+
+        return None # Key not found or values list inconsistent
 
     def insert(self, key, value):
         """
@@ -136,10 +135,8 @@ class BPlusTree:
             leaf_node = new_leaf
 
         # Add key/value to leaf (maintaining sorted order)
-        # Find insertion point
-        insert_idx = 0
-        while insert_idx < len(leaf_node.keys) and leaf_node.keys[insert_idx] < key:
-            insert_idx += 1
+        # Find insertion point using bisect_left
+        insert_idx = bisect.bisect_left(leaf_node.keys, key)
 
         # Avoid duplicates - update existing key if found
         if insert_idx < len(leaf_node.keys) and leaf_node.keys[insert_idx] == key:
@@ -223,11 +220,9 @@ class BPlusTree:
             # Otherwise insert into existing parent
             parent = node.parent
             
-            # Find where to insert in the parent
-            insert_idx = 0
-            while insert_idx < len(parent.keys) and parent.keys[insert_idx] < parent_key:
-                insert_idx += 1
-                
+            # Use bisect_left to find the insertion point for the key in the parent
+            insert_idx = bisect.bisect_left(parent.keys, parent_key)
+            
             # Insert the key and child pointer in the parent
             parent.keys.insert(insert_idx, parent_key)
             
@@ -259,10 +254,12 @@ class BPlusTree:
         leaf_node = self._find_leaf(key)
 
         # Try to find the key in the leaf
-        try:
-            index = leaf_node.keys.index(key)
-        except ValueError:
-            return False # Key not found (silently fail instead of printing)
+        # Use bisect_left to find the potential index
+        index = bisect.bisect_left(leaf_node.keys, key)
+
+        # Check if key exists at the found index
+        if not (index < len(leaf_node.keys) and leaf_node.keys[index] == key):
+             return False # Key not found
 
         # Remove key and value
         leaf_node.keys.pop(index)
@@ -292,73 +289,6 @@ class BPlusTree:
                  self.root.parent = None
 
         return True
-
-    def _delete(self, node, key):
-        """
-        Recursive helper for deletion. Handle leaf and internal nodes.
-        Ensure all nodes maintain minimum keys after deletion.
-        """
-        # Find the position where key is or would be
-        i = 0
-        while i < len(node.keys) and key > node.keys[i]:
-            i += 1
-            
-        # Case: Leaf node (direct deletion)
-        if node.is_leaf:
-            # If key exists in this leaf
-            if i < len(node.keys) and node.keys[i] == key:
-                node.keys.pop(i)
-                node.values.pop(i)
-                return True
-            return False  # Key not found
-            
-        # Case: Internal node
-        # If key is in this node at position i
-        if i < len(node.keys) and node.keys[i] == key:
-            # Replace with predecessor or successor based on which child has more keys
-            if len(node.children[i].keys) >= len(node.children[i+1].keys):
-                # Use predecessor (rightmost key in left subtree)
-                pred_node = node.children[i]
-                while not pred_node.is_leaf:
-                    pred_node = pred_node.children[-1]
-                pred_key = pred_node.keys[-1]
-                pred_value = pred_node.values[-1] if pred_node.is_leaf else None
-                
-                # Replace key with predecessor
-                node.keys[i] = pred_key
-                
-                # Delete predecessor from leaf
-                return self._delete(node.children[i], pred_key)
-            else:
-                # Use successor (leftmost key in right subtree)
-                succ_node = node.children[i+1]
-                while not succ_node.is_leaf:
-                    succ_node = succ_node.children[0]
-                succ_key = succ_node.keys[0]
-                succ_value = succ_node.values[0] if succ_node.is_leaf else None
-                
-                # Replace key with successor
-                node.keys[i] = succ_key
-                
-                # Delete successor from leaf
-                return self._delete(node.children[i+1], succ_key)
-        
-        # Key not in this node, recurse to appropriate child
-        # First ensure child has enough keys
-        if len(node.children[i].keys) < math.ceil(self.order / 2):
-            self._fill_child(node, i)
-            
-        # Recursively delete
-        # After _fill_child, the structure may have changed, so we need to recalculate i
-        i = 0
-        while i < len(node.keys) and key > node.keys[i]:
-            i += 1
-            
-        # Check if child i still exists (may have merged)
-        if i >= len(node.children):
-            i = len(node.children) - 1
-            
-        return self._delete(node.children[i], key)
 
     def _fill_child(self, node, index):
         """
@@ -519,12 +449,15 @@ class BPlusTree:
     def update(self, key, new_value):
         """ Update value associated with an existing key. Return True if successful. """
         leaf_node = self._find_leaf(key)
-        try:
-            index = leaf_node.keys.index(key)
+        # Use bisect_left to find the potential index
+        index = bisect.bisect_left(leaf_node.keys, key)
+
+        # Check if the key exists at the index
+        if index < len(leaf_node.keys) and leaf_node.keys[index] == key:
             leaf_node.values[index] = new_value
             return True
-        except ValueError:
-            return False # Key not found
+        else:
+             return False # Key not found
 
     def range_query(self, start_key, end_key):
         """ Retrieves all key-value pairs within the given range (inclusive). """

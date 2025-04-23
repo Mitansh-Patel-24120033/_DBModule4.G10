@@ -7,6 +7,7 @@ This script creates tables, performs operations, and visualizes the B+ Tree stru
 import os
 import time
 import random
+import argparse
 import matplotlib
 matplotlib.use('Agg')  # Use non-GUI backend to avoid QSocketNotifier warnings
 import matplotlib.pyplot as plt
@@ -14,15 +15,14 @@ import matplotlib.pyplot as plt
 from database.db_manager import Database
 from database.bplustree import BPlusTree
 from database.bruteforce import BruteForceDB
+from database.performance_utils import run_performance_benchmarks
 
-# Number of rows to populate in the tables
-rowN = 100
 # Persist demo database under customdb/
 CUSTOM_DB_DIR = 'customdb'
 os.makedirs(CUSTOM_DB_DIR, exist_ok=True)
 DB_FILE = os.path.join(CUSTOM_DB_DIR, 'demo_database.pkl')
 
-def demonstrate_tables():
+def demonstrate_tables(num_rows):
     """Create sample tables and demonstrate basic operations."""
     print("=== Creating and testing tables ===")
     
@@ -37,8 +37,8 @@ def demonstrate_tables():
     orders_table = db.create_table("orders", order=4)
     
     # Add data to the customers table
-    print(f"\nPopulating customers table with {rowN} entries...")
-    for i in range(1, rowN+1):
+    print(f"\nPopulating customers table with {num_rows} entries...")
+    for i in range(1, num_rows+1):
         cust_info = {
             "customer_name": f"Customer {i}",
             "Age": random.randint(20, 70),
@@ -50,8 +50,8 @@ def demonstrate_tables():
         customers_table.insert(i, cust_info)
     
     # Add data to the orders table
-    print(f"\nPopulating orders table with {rowN} entries...")
-    for i in range(1, rowN+1):
+    print(f"\nPopulating orders table with {num_rows} entries...")
+    for i in range(1, num_rows+1):
         status = random.choice(["Pending", "Delivered", "Picked up"])
         pickup_date = f"2023-{random.randint(1,12):02d}-{random.randint(1,28):02d}"
         delivery_date = None if status == "Pending" else f"2023-{random.randint(1,12):02d}-{random.randint(1,28):02d}"
@@ -83,7 +83,7 @@ def demonstrate_tables():
         print(f"Error visualizing orders table: {e}")
     
     # Demonstrate select operation
-    mid = rowN // 2 or 1
+    mid = num_rows // 2 or 1
     print("\nSelecting data:")
     customer = customers_table.select(mid)
     print(f"Customer with ID {mid}: {customer}")
@@ -92,7 +92,7 @@ def demonstrate_tables():
     print(f"Order with ID {mid}: {order}")
     
     # Demonstrate range query
-    lo, hi = 1, min(2, rowN)
+    lo, hi = 1, min(2, num_rows)
     print("\nRange queries:")
     cs_orders = orders_table.range_query(lo, hi)
     print(f"Orders with IDs {lo}-{hi}:")
@@ -106,7 +106,7 @@ def demonstrate_tables():
     print(f"Updated customer with ID 1: {updated_customer}")
     
     # Demonstrate delete
-    del_key = min(5, rowN)
+    del_key = min(5, num_rows)
     print("\nDeleting data:")
     customers_table.delete(del_key)
     deleted_customer = customers_table.select(del_key)
@@ -136,108 +136,9 @@ def run_performance_comparison():
     # Test with different set sizes
     set_sizes = [500, 1000, 5000, 10000]
     
-    # Store results for plotting
-    results = {
-        'sizes': set_sizes,
-        'bplus_insert': [],
-        'brute_insert': [],
-        'bplus_search': [],
-        'brute_search': [],
-        'bplus_delete': [],
-        'brute_delete': [],
-        'bplus_range': [],
-        'brute_range': [],
-        'bplus_memory': [],
-        'brute_memory': []
-    }
+    # Run the benchmarks using the utility function
+    results = run_performance_benchmarks(set_sizes)
     
-    for data_size in set_sizes:
-        print(f"\n--- Testing with {data_size} records ---")
-
-        # Set up data structures for this sample size
-        bplus_tree = BPlusTree(order=10)
-        brute_force = BruteForceDB()
-
-        # Generate test data
-        keys = random.sample(range(data_size * 5), data_size)
-        values = [f"value_{k}" for k in keys]
-
-        # Compare insertion performance
-        print("\nComparing insertion performance:")
-        start_time = time.time()
-        for key in keys:
-            bplus_tree.insert(key, values[keys.index(key)])
-        insert_time = time.time() - start_time
-        results['bplus_insert'].append(insert_time)
-        print(f"Total B+ Tree insertion time: {insert_time:.6f} seconds")
-
-        start_time = time.time()
-        for key in keys:
-            brute_force.insert(key, values[keys.index(key)])
-        brute_insert_time = time.time() - start_time
-        results['brute_insert'].append(brute_insert_time)
-        print(f"Total Brute Force insertion time: {brute_insert_time:.6f} seconds")
-
-        # Compare search performance
-        print("\nComparing search performance:")
-        search_keys = random.sample(keys, min(100, data_size))
-        start_time = time.time()
-        for key in search_keys:
-            bplus_tree.search(key)
-        search_time = time.time() - start_time
-        results['bplus_search'].append(search_time)
-        print(f"Total B+ Tree search time for {len(search_keys)} lookups: {search_time:.6f} seconds")
-
-        start_time = time.time()
-        for key in search_keys:
-            brute_force.search(key)
-        brute_search_time = time.time() - start_time
-        results['brute_search'].append(brute_search_time)
-        print(f"Total Brute Force search time for {len(search_keys)} lookups: {brute_search_time:.6f} seconds")
-
-        # Compare deletion performance
-        print("\nComparing deletion performance:")
-        delete_keys = random.sample(keys, min(100, data_size))
-        start_time = time.time()
-        for key in delete_keys:
-            bplus_tree.delete(key)
-        bplus_delete_time = time.time() - start_time
-        results['bplus_delete'].append(bplus_delete_time)
-        print(f"B+ Tree deletion time: {bplus_delete_time:.6f} seconds")
-
-        start_time = time.time()
-        for key in delete_keys:
-            brute_force.delete(key)
-        brute_delete_time = time.time() - start_time
-        results['brute_delete'].append(brute_delete_time)
-        print(f"Brute Force deletion time: {brute_delete_time:.6f} seconds")
-
-        # Compare range query performance
-        print("\nComparing range query performance:")
-        range_start = data_size // 4
-        range_end = range_start + data_size // 2
-        start_time = time.time()
-        bplus_result = bplus_tree.range_query(range_start, range_end)
-        bplus_range_time = time.time() - start_time
-        results['bplus_range'].append(bplus_range_time)
-        print(f"B+ Tree range query time: {bplus_range_time:.6f} seconds, found {len(bplus_result)} results")
-
-        start_time = time.time()
-        brute_result = brute_force.range_query(range_start, range_end)
-        brute_range_time = time.time() - start_time
-        results['brute_range'].append(brute_range_time)
-        print(f"Brute Force range query time: {brute_range_time:.6f} seconds, found {len(brute_result)} results")
-
-        # Compare memory usage
-        print("\nComparing memory usage:")
-        bplus_memory = bplus_tree.get_memory_usage()
-        results['bplus_memory'].append(bplus_memory)
-        print(f"B+ Tree memory usage: {bplus_memory} bytes")
-
-        brute_memory = brute_force.get_memory_usage()
-        results['brute_memory'].append(brute_memory)
-        print(f"Brute Force memory usage: {brute_memory} bytes")
-
     # Generate performance visualizations
     try:
         os.makedirs("visualizations", exist_ok=True)
@@ -449,15 +350,22 @@ def run_performance_comparison():
     plt.close()
 
 def main():
-    """Run the demonstration of the B+ Tree database functionality."""
-    print("=== B+ Tree Database Demonstration ===\n")
+    """Main function to run the demo script."""
     
-    # Demonstrate table operations
-    demonstrate_tables()
-    
-    # Run performance comparison
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Run B+ Tree database demo and performance tests.')
+    parser.add_argument('--rows', type=int, default=100, 
+                        help='Number of rows to insert into demo tables (default: 100)')
+    args = parser.parse_args()
+
+    print("Starting B+ Tree DBMS Demo...")
+
+    # Run table demonstrations
+    demonstrate_tables(num_rows=args.rows)
+
+    # Run performance comparisons
     run_performance_comparison()
-    
+
     print("\nDemonstration completed successfully!")
     print("B+ Tree visualizations have been saved in the 'visualizations' directory.")
 

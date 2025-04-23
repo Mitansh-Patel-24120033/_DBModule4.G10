@@ -51,15 +51,18 @@ pip install -r requirements.txt
 
 ### Demo Script
 
-Run a demonstration of table creation, sample data insertion (controlled by `rowN`), basic CRUD, tree visualization (SVG), and performance benchmarking:
+Run a demonstration of table creation, sample data insertion, basic CRUD, tree visualization (SVG), and performance benchmarking. You can control the number of demo rows inserted using the `--rows` argument:
 
 ```bash
-# Optionally set `rowN` for number of demo rows (default in script)
+# Default: Insert 100 rows
 python run_demo.py
+
+# Custom: Insert 50 rows
+python run_demo.py --rows 50
 ```
 
 Outputs:
-- Demo tables under `customdb/demo_database.pkl` with `rowN` records each
+- Demo tables under `customdb/demo_database.pkl` with the specified number of records each
 - CRUD operation logs
 - B+ tree SVGs in `visualizations/`
 - Performance charts (insertion, search, delete, range, memory) in `visualizations/`
@@ -103,19 +106,20 @@ Charts are saved under `visualizations/` for comparison between the B+ tree and 
 
 ```
 .
-├── app.py                  # Flask web interface
-├── run_demo.py            # Demo script & performance benchmarking
-├── database/              # Core database modules
-│   ├── bplustree.py        # B+ tree implementation
-│   ├── bruteforce.py       # Brute force comparator
-│   ├── db_manager.py       # Database manager & persistence
-│   └── table.py            # Table abstraction (uses BPlusTree)
-├── templates/             # HTML templates for Flask
-├── static/                # Static assets & visualizations
-│   └── visualizations/     # Generated SVGs (trees) and PNG charts
-├── report.ipynb           # Jupyter notebook report template
-├── requirements.txt       # Python dependencies
-└── README.md              # This file
+├── app.py                      # Flask web interface
+├── run_demo.py                 # Demo script & performance benchmarking
+├── database/                   # Core database modules
+│   ├── bplustree.py            # B+ tree implementation
+│   ├── bruteforce.py           # Brute force comparator
+│   ├── db_manager.py           # Database manager & persistence
+│   ├── table.py                # Table abstraction (uses BPlusTree)
+│   └── performance_utils.py    # Performance benchmark utility functions
+├── templates/                  # HTML templates for Flask
+├── static/                     # Static assets & visualizations
+│   └── visualizations/         # Generated SVGs (trees) and PNG charts
+├── report.ipynb                # Jupyter notebook report template
+├── requirements.txt            # Python dependencies
+└── README.md                   # This file
 ```
 
 

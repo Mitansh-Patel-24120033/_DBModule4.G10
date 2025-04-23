@@ -6,6 +6,7 @@ from database.bplustree import BPlusTree
 from database.bruteforce import BruteForceDB
 import random
 import time
+from database.performance_utils import run_performance_benchmarks # Updated path
 
 app = Flask(__name__)
 app.secret_key = 'bplus_tree_secret_key'  # For flash messages
@@ -26,52 +27,14 @@ def index():
 @app.route('/performance')
 def performance():
     """Run performance comparison and render results in UI."""
-    # Prepare dataset sizes and result storage
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
 
     sizes = [500, 1000, 5000, 10000]
-    results = { 'sizes': sizes,
-                'bplus_insert': [], 'brute_insert': [],
-                'bplus_search': [], 'brute_search': [],
-                'bplus_delete': [], 'brute_delete': [],
-                'bplus_range': [], 'brute_range': [],
-                'bplus_memory': [], 'brute_memory': [] }
 
-    for n in sizes:
-        bpt = BPlusTree(order=10)
-        bf = BruteForceDB()
-        keys = random.sample(range(n*5), n)
-        vals = [f'value_{k}' for k in keys]
-        # insertion
-        t0 = time.time()
-        for i, k in enumerate(keys): bpt.insert(k, vals[i])
-        results['bplus_insert'].append(time.time()-t0)
-        t0 = time.time()
-        for i, k in enumerate(keys): bf.insert(k, vals[i])
-        results['brute_insert'].append(time.time()-t0)
-        # search
-        sample = random.sample(keys, min(100, n))
-        t0 = time.time(); [bpt.search(k) for k in sample]
-        results['bplus_search'].append(time.time()-t0)
-        t0 = time.time(); [bf.search(k) for k in sample]
-        results['brute_search'].append(time.time()-t0)
-        # delete
-        dels = random.sample(keys, min(100, n))
-        t0 = time.time(); [bpt.delete(k) for k in dels]
-        results['bplus_delete'].append(time.time()-t0)
-        t0 = time.time(); [bf.delete(k) for k in dels]
-        results['brute_delete'].append(time.time()-t0)
-        # range
-        r0, r1 = n//4, n//4 + n//2
-        t0 = time.time(); bpt.range_query(r0, r1)
-        results['bplus_range'].append(time.time()-t0)
-        t0 = time.time(); bf.range_query(r0, r1)
-        results['brute_range'].append(time.time()-t0)
-        # memory
-        results['bplus_memory'].append(bpt.get_memory_usage())
-        results['brute_memory'].append(bf.get_memory_usage())
+    # Run benchmarks using the shared utility function
+    results = run_performance_benchmarks(sizes)
 
     # generate charts
     out_dir = os.path.join('static', 'visualizations')
@@ -438,12 +401,29 @@ def table_performance_in_db(dbname, table_name):
     bf_search = time.time() - start
 
     # Measure range query performance
-    lo, hi = min(keys) if keys else (None, None), max(keys) if keys else (None, None)
+    # Define range based on key span, similar to batch analysis
     if keys:
-        start = time.time(); bpt.range_query(lo, hi)
-        bpt_range = time.time() - start
-        start = time.time(); bf.range_query(lo, hi)
-        bf_range = time.time() - start
+        min_key, max_key = min(keys), max(keys)
+        span = max_key - min_key
+
+        # Define range similar to batch: min + 1/4 span to min + 3/4 span
+        # Ensure span is large enough for a meaningful range
+        if span >= 4:
+            start_key = min_key + span // 4
+            end_key = start_key + span // 2
+
+            print(f"Range query for table '{table_name}' testing key span range {start_key} to {end_key}")
+            start = time.time(); bpt.range_query(start_key, end_key)
+            bpt_range = time.time() - start
+            start = time.time(); bf.range_query(start_key, end_key)
+            bf_range = time.time() - start
+        else: # For tables with small key span or few keys, test the full actual range
+            start_key, end_key = min_key, max_key
+            print(f"Range query for table '{table_name}' with small key span, testing full range {start_key} to {end_key}")
+            start = time.time(); bpt.range_query(start_key, end_key)
+            bpt_range = time.time() - start
+            start = time.time(); bf.range_query(start_key, end_key)
+            bf_range = time.time() - start
     else:
         bpt_range = bf_range = 0
 
