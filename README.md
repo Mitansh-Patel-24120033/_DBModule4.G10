@@ -128,8 +128,8 @@ Charts are saved under `visualizations/` for comparison between the B+ tree and 
 | Name                  | ID        | Email                           |
 |-----------------------|-----------|---------------------------------|
 | Mitansh Patel         | 24120033  | mitansh.patel@iitgn.ac.in       |
-| Nishit Prajapati      | 24120000  | nishit.prajapati@iitgn.ac.in    |
-| Chinteshwar Dhakate   | 24120000  | chinteshwar.dhakate@iitgn.ac.in |
+| Nishit Prajapati      | 24120036  | nishit.prajapati@iitgn.ac.in    |
+| Chinteshwar Dhakate   | 24120024  | chinteshwar.dhakate@iitgn.ac.in |
 
 ## Module 4 Tasks
 
@@ -137,11 +137,11 @@ Below is an outline of the deliverables for Module 4, with the status of each im
 
 | Task | Description                                               | Status      |
 |------|-----------------------------------------------------------|-------------|
-| 1    | Implement B+ tree core operations (insert, delete, search, range) | ✅ Completed |
-| 2    | Implement BruteForceDB comparator for benchmarking         | ✅ Completed |
-| 3    | Create Database manager and `Table` abstraction            | ✅ Completed |
-| 4    | Conduct comprehensive performance testing                 | ✅ Completed |
-| 5    | Visualize B+ tree structures with Graphviz                | ✅ Completed |
-| 6    | Add persistence (save/load database to disk)              | ✅ Completed |
-| 7    | Provide Jupyter Notebook Report                           | ✅ Completed |
-| ➕   | Bonus: Develop a web-based UI for CRUD and visualization  | ✅ Completed |
+| 1    | Implement B+ tree core operations (insert, delete, search, range) | Completed |
+| 2    | Implement BruteForceDB comparator for benchmarking         | Completed |
+| 3    | Create Database manager and `Table` abstraction            | Completed |
+| 4    | Conduct comprehensive performance testing                 | Completed |
+| 5    | Visualize B+ tree structures with Graphviz                | Completed |
+| 6    | Add persistence (save/load database to disk)              | Completed |
+| 7    | Provide Jupyter Notebook Report                           | Completed |
+| ➕   | Bonus: Develop a web-based UI for CRUD and visualization  | Completed |
