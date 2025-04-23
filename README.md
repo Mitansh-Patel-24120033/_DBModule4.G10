@@ -76,9 +76,16 @@ python app.py
 ```
 
 Open your browser at http://127.0.0.1:5000/ to:
+- View the homepage:
+  ![Homepage Screenshot](db_management_system/homepage.png)
+  *Homepage showing options for database management and batch performance analysis.*
 - Create or delete tables
 - Insert, update, delete, search, and range query records
-- View the live B+ tree structure PNG
+- View the live B+ tree structure SVG
+
+From the homepage:
+*   **Databases:** Click this button to view, create, or delete databases and manage tables within them.
+*   **Batch Performance Analysis:** Click this button to run and view performance benchmarks (insertion, search, deletion, range query, random operations, memory usage) comparing the B+ Tree and Brute Force methods across various dataset sizes (`[500, 1000, 5000, 10000]`) using randomly generated keys.
 
 ### Report
 
