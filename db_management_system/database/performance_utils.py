@@ -22,7 +22,7 @@ def run_performance_benchmarks(sizes):
         
         # --- Setup for size N ---
         # Use fresh instances for each size to isolate tests
-        bpt = BPlusTree(order=10) # Example order, can be parameterized
+        bpt = BPlusTree(order=10)
         bf = BruteForceDB()
         keys = random.sample(range(n * 5), n) # Generate unique keys
         vals = [f'value_{k}' for k in keys]

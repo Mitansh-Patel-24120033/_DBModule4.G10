@@ -12,8 +12,8 @@ This repository contains a Python-based lightweight Database Management System u
   - [Requirements](#requirements)
   - [Installation](#installation)
 - [Usage](#usage)
-  - [Demo Script](#demo-script)
   - [Web Interface](#web-interface)
+  - [Demo Script](#demo-script)
   - [Report](#report)
 - [Performance Testing](#performance-testing)
 - [Project Structure](#project-structure)
@@ -49,24 +49,6 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Demo Script
-
-Run a demonstration of table creation, sample data insertion, basic CRUD, tree visualization (SVG), and performance benchmarking. You can control the number of demo rows inserted using the `--rows` argument:
-
-```bash
-# Default: Insert 100 rows
-python run_demo.py
-
-# Custom: Insert 500 rows (recommended)
-python run_demo.py --rows 500
-```
-
-Outputs:
-- Demo tables under `customdb/demo_database.pkl` with the specified number of records each
-- CRUD operation logs
-- B+ tree SVGs in `visualizations/`
-- Performance charts (insertion, search, delete, range, memory) in `visualizations/`
-
 ### Web Interface
 
 Start the Flask-based UI:
@@ -86,6 +68,24 @@ Open your browser at http://127.0.0.1:5000/ to:
 From the homepage:
 *   **Databases:** Click this button to view, create, or delete databases and manage tables within them.
 *   **Batch Performance Analysis:** Click this button to run and view performance benchmarks (insertion, search, deletion, range query, random operations, memory usage) comparing the B+ Tree and Brute Force methods across various dataset sizes (`[500, 1000, 5000, 10000]`) using randomly generated keys.
+
+### Demo Script
+
+Run a demonstration of table creation, sample data insertion, basic CRUD, tree visualization (SVG), and performance benchmarking. You can control the number of demo rows inserted using the `--rows` argument:
+
+```bash
+# Default: Insert 100 rows
+python run_demo.py
+
+# Custom: Insert 500 rows (recommended)
+python run_demo.py --rows 500
+```
+
+Outputs:
+- Demo tables under `customdb/demo_database.pkl` with the specified number of records each
+- CRUD operation logs
+- B+ tree SVGs in `visualizations/`
+- Performance charts (insertion, search, delete, range, memory) in `visualizations/`
 
 ### Report
 

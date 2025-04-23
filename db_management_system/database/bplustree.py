@@ -13,8 +13,8 @@ class BPlusTreeNode:
     def __init__(self, is_leaf=False, order=4): # Default order, adjust as needed
         self.is_leaf = is_leaf
         self.keys = []
-        self.values = [] if is_leaf else None  # Only leaf nodes store values
-        self.children = [] if not is_leaf else None  # Only internal nodes store children
+        self.values = [] if is_leaf else None  # Leaf nodes store values
+        self.children = [] if not is_leaf else None  # Internal nodes store children
         self.parent = None
         self.next_leaf = None # Only used if is_leaf is True
         self.order = order # Store order for split/merge logic
@@ -22,7 +22,7 @@ class BPlusTreeNode:
     def ensure_valid_structure(self, silent=False):
         """Ensure internal nodes maintain the B+ tree property of n+1 children for n keys"""
         if self.is_leaf:
-            return True  # Leaf nodes don't need structure validation
+            return True
             
         # For internal nodes: must have exactly n+1 children for n keys
         expected_children = len(self.keys) + 1
@@ -44,8 +44,8 @@ class BPlusTreeNode:
             
             if not silent:
                 print(f"Fixed B+ Tree node: adjusted from {len(self.children)-(expected_children)} children to {expected_children} children for {len(self.keys)} keys")
-            return False  # Structure needed fixing
-        return True  # Structure was valid
+            return False
+        return True
 
     def is_full(self):
         return len(self.keys) >= self.order - 1 # Max keys allowed is order - 1
@@ -53,9 +53,9 @@ class BPlusTreeNode:
     def is_underflow(self):
         # Root can have fewer keys, handle separately in BPlusTree class
         # Minimum keys is ceil(order / 2) - 1 for internal, ceil((order-1)/2) for leaf
-        min_keys = math.ceil((self.order -1) / 2) # Common minimum for leaves
+        min_keys = math.ceil((self.order - 1) / 2) # Leaf minimum
         if not self.is_leaf:
-            min_keys = math.ceil(self.order / 2) - 1 # Common minimum for internal
+            min_keys = math.ceil(self.order / 2) - 1 # Internal minimum
         return len(self.keys) < min_keys
 
 # --- B+ Tree Class ---
@@ -75,6 +75,7 @@ class BPlusTree:
             node.ensure_valid_structure(silent=True)
         
         while not node.is_leaf:
+            # Find the first key greater than the target key
             # Use bisect_right to find the insertion point, which gives the correct child index
             i = bisect.bisect_right(node.keys, key)
             
@@ -102,7 +103,7 @@ class BPlusTree:
             if index < len(leaf_node.values):
                  return leaf_node.values[index]
 
-        return None # Key not found or values list inconsistent
+        return None
 
     def insert(self, key, value):
         """
@@ -138,7 +139,7 @@ class BPlusTree:
         # Find insertion point using bisect_left
         insert_idx = bisect.bisect_left(leaf_node.keys, key)
 
-        # Avoid duplicates - update existing key if found
+        # Update existing key if found (avoid duplicates)
         if insert_idx < len(leaf_node.keys) and leaf_node.keys[insert_idx] == key:
             leaf_node.values[insert_idx] = value  # Update existing key
             return
@@ -157,8 +158,8 @@ class BPlusTree:
         Improved version of _split_child with more consistent naming and handling.
         """
         # Calculate split point
-        mid_index = self.order // 2  # Split point
-        
+        mid_index = self.order // 2
+         
         # Create new sibling node with the same properties as the original
         new_sibling = BPlusTreeNode(is_leaf=node.is_leaf, order=self.order)
         new_sibling.parent = node.parent  # Both will share the same parent initially
@@ -280,9 +281,7 @@ class BPlusTree:
                          break
                  if child_index != -1:
                      self._fill_child(parent, child_index)
-                 else:
-                     # This should never happen with our improved structure validation
-                     pass
+
             elif len(self.root.keys) == 0 and not self.root.is_leaf:
                  # Root is internal and became empty after deletion/merge from below
                  self.root = self.root.children[0] # Promote the single child
@@ -371,8 +370,7 @@ class BPlusTree:
         right_sibling = node.children[index + 1]
         
         # For leaf nodes
-        if child.is_leaf:
-            # Move the first key-value from right sibling to child
+        if child.is_leaf:             # Move the first key-value from right sibling to child
             child.keys.append(right_sibling.keys.pop(0))
             child.values.append(right_sibling.values.pop(0))
             
@@ -440,10 +438,7 @@ class BPlusTree:
                       print("Error: Could not find parent index during recursive underflow.")
 
     def _handle_underflow(self, parent, child_index):
-        """
-        Handle underflow at a node by borrowing from siblings or merging.
-        This is a wrapper for the _fill_child method for backward compatibility.
-        """
+        """ Handle underflow at a node (wrapper for _fill_child). """
         self._fill_child(parent, child_index)
 
     def update(self, key, new_value):
@@ -581,9 +576,9 @@ class BPlusTree:
         dot.node(node_id, label, shape='box', style='filled', fillcolor=fill_color)
 
         # Recursively add children if it's an internal node
-        if not node.is_leaf:
-            for child in node.children:
-                 self._add_nodes(dot, child)
+        if not node.is_leaf: # Only recurse for internal nodes
+             for child in node.children:
+                  if child: self._add_nodes(dot, child)
 
 
     def _add_edges(self, dot, node):

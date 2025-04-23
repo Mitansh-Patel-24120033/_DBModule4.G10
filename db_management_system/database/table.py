@@ -1,20 +1,16 @@
 from .bplustree import BPlusTree
 
 class Table:
-    """
-    Represents a database table, using a B+ Tree for indexing and storage.
-    """
+    """ Represents a database table, using a B+ Tree for indexing. """
     def __init__(self, name, order=4): # Pass B+ Tree order
         self.name = name
-        # Each table has its own B+ Tree index.
         # The keys of the B+ Tree are the primary keys (or indexed column) of the table.
-        # The values can be the entire record/row (e.g., as a dictionary or tuple).
+        # The values are the corresponding records/rows.
         self.index = BPlusTree(order=order)
         print(f"Table '{self.name}' created with B+ Tree index (order={order}).")
 
     def insert(self, key, value):
         """ Inserts a record (value) associated with a key into the table's index. """
-        # In a real DB, value would be a row/record (dict, tuple, object)
         print(f"Table '{self.name}': Inserting key={key}") #, value={value}")
         self.index.insert(key, value)
 

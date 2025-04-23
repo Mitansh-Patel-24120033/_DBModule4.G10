@@ -50,7 +50,7 @@ class Database:
     def __init__(self, persistence_path=DEFAULT_PERSISTENCE_FILE):
         self.tables = {}  # Dictionary to store tables {table_name: Table_object}
         self.persistence_path = persistence_path
-        self._load_database() # Attempt to load existing data on init
+        self._load_database()
 
     def create_table(self, name, order=4):
         """ Creates a new table with the given name and B+ Tree order. """
@@ -95,12 +95,10 @@ class Database:
     def _load_database(self):
         """ Loads the database state from the persistence file, if it exists and is non-empty. """
         path = self.persistence_path
-        # If file missing or empty, start with an empty database
         if not os.path.exists(path) or os.path.getsize(path) == 0:
             print(f"Persistence file '{path}' not found or empty. Starting with empty database.")
             self.tables = {}
             return
-        # Attempt to load existing data
         try:
             with open(path, 'rb') as f:
                 self.tables = pickle.load(f)
@@ -115,8 +113,7 @@ class Database:
             self.tables = {}
 
     def _restore_transient_state(self):
-         """ If pickle doesn't save everything (like parent pointers), restore it. """
-         print("Restoring transient state (e.g., parent pointers)...")
+         """ Restore parent pointers for B+ Trees after loading from pickle. """
          for table in self.tables.values():
              if isinstance(table.index, BPlusTree):
                  self._restore_parents(table.index.root)
@@ -151,7 +148,6 @@ if __name__ == "__main__":
 
     if users_table:
         print("\n--- Populating Users ---")
-        # Check if data already exists from previous load
         if not users_table.select(1):
              users_table.insert(1, {"name": "Alice", "email": "alice@example.com"})
              users_table.insert(5, {"name": "Bob", "email": "bob@example.com"})

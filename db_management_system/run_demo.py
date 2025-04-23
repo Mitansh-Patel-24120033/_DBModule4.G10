@@ -29,7 +29,7 @@ def demonstrate_tables(num_rows):
     # Create a database (overwrite any existing demo_database.pkl)
     if os.path.exists(DB_FILE):
         os.remove(DB_FILE)
-        print(f"Existing demo database removed. Starting fresh at {DB_FILE}.")
+        print(f"Removing existing demo database at {DB_FILE}.")
     db = Database(DB_FILE)
     
     # Create tables (customers and orders)
@@ -144,7 +144,7 @@ def run_performance_comparison():
         os.makedirs("visualizations", exist_ok=True)
         
         # Plot metrics for multiple set sizes (using a 3x2 grid)
-        plt.figure(figsize=(12, 10)) # Adjusted size for 3x2 layout
+        plt.figure(figsize=(12, 10))
         
         # Plot 1: Insertion Time
         plt.subplot(3, 2, 1)
@@ -248,7 +248,7 @@ def run_performance_comparison():
                 'name': 'Random Ops Time (ms)',
                 'bplus': results['bplus_random'][-1] * 1000,
                 'brute': results['brute_random'][-1] * 1000,
-                'filename': 'random_ops_time' # New filename for this bar chart
+                'filename': 'random_ops_time'
             }
         ]
         
@@ -297,7 +297,7 @@ def main():
     # Set up argument parser
     parser = argparse.ArgumentParser(description='Run B+ Tree database demo and performance tests.')
     parser.add_argument('--rows', type=int, default=100, 
-                        help='Number of rows to insert into demo tables (default: 100)')
+                        help='Number of demo rows (default: 100)')
     args = parser.parse_args()
 
     print("Starting B+ Tree DBMS Demo...")

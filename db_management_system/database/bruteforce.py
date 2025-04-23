@@ -2,10 +2,7 @@
 import sys
 
 class BruteForceDB:
-    """
-    Serves as a baseline for performance comparison against the B+ Tree.
-    Uses a simple list to store keys/data and performs operations via linear iteration.
-    """
+    """Baseline list-based storage for performance comparison."""
     def __init__(self):
         # Store data as a list of tuples: [(key1, value1), (key2, value2), ...]
         self.data = []
@@ -15,12 +12,10 @@ class BruteForceDB:
         Inserts a key-value pair. Overwrites if key exists.
         If only a key is provided (for compatibility with outfile.txt), the value is None.
         """
-        # Check if key exists (linear scan)
         for i in range(len(self.data)):
             if self.data[i][0] == key:
                 self.data[i] = (key, value) # Update existing
                 return
-        # If key doesn't exist, append
         self.data.append((key, value))
 
     def search(self, key):
@@ -31,7 +26,7 @@ class BruteForceDB:
         for k, v in self.data:
             if k == key:
                 return v
-        return None # Key not found
+        return None
 
     def delete(self, key):
         """
@@ -50,7 +45,7 @@ class BruteForceDB:
             if self.data[i][0] == key:
                 self.data[i] = (key, new_value)
                 return True
-        return False # Key not found to update
+        return False
 
     def range_query(self, start_key, end_key):
         """
@@ -63,16 +58,14 @@ class BruteForceDB:
         """
         Returns all key-value pairs.
         """
-        return list(self.data) # Return a copy
+        return list(self.data)
 
     def get_memory_usage(self):
         """
         Basic memory usage estimation (may not be fully accurate for complex objects).
         """
-        # Size of the list itself plus size of tuples/keys/values (approx)
         size = sys.getsizeof(self.data)
-        if self.data:
-            # Add size of a sample element multiplied by number of elements
-            # This is a rough estimate!
-            size += len(self.data) * sys.getsizeof(self.data[0])
+        for k, v in self.data:
+            # Sum size of each key and value individually
+            size += sys.getsizeof(k) + sys.getsizeof(v)
         return size

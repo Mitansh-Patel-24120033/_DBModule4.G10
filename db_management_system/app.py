@@ -28,7 +28,7 @@ def index():
 def performance():
     """Run performance comparison and render results in UI."""
     import matplotlib
-    matplotlib.use('Agg')
+    matplotlib.use('Agg') # Use non-GUI backend for plotting
     import matplotlib.pyplot as plt
 
     sizes = [500, 1000, 5000, 10000]
@@ -36,7 +36,6 @@ def performance():
     # Run benchmarks using the shared utility function
     results = run_performance_benchmarks(sizes)
 
-    # generate charts
     out_dir = os.path.join('static', 'visualizations')
     os.makedirs(out_dir, exist_ok=True)
     # Combined comparison chart (3x2 grid)
@@ -104,7 +103,7 @@ def manage_databases():
     # Creation logic: JSON API or HTML form
     if request.content_type and 'application/json' in request.content_type:
         # JSON API request
-        data = request.get_json() or {}
+        data = request.get_json(silent=True) or {}
         name = data.get('dbname')
         if not name:
             return jsonify({'error': 'Missing "dbname" parameter'}), 400
