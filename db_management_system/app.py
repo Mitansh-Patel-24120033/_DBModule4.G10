@@ -39,24 +39,39 @@ def performance():
     # generate charts
     out_dir = os.path.join('static', 'visualizations')
     os.makedirs(out_dir, exist_ok=True)
-    # Combined comparison chart
-    plt.figure(figsize=(10,8))
-    plt.subplot(2,2,1)
+    # Combined comparison chart (3x2 grid)
+    plt.figure(figsize=(12, 10))
+
+    # Plot 1: Insertion Time
+    plt.subplot(3, 2, 1)
     plt.plot(sizes, [t*1000 for t in results['bplus_insert']], 'o-', label='B+ Tree')
     plt.plot(sizes, [t*1000 for t in results['brute_insert']], 's-', label='Brute')
-    plt.title('Insertion Time'); plt.xlabel('Records'); plt.ylabel('ms'); plt.legend(); plt.grid(True)
-    plt.subplot(2,2,2)
+    plt.title('Insertion Time'); plt.xlabel('Records'); plt.ylabel('Time (ms)'); plt.legend(); plt.grid(True)
+
+    # Plot 2: Search Time
+    plt.subplot(3, 2, 2)
     plt.plot(sizes, [t*1000 for t in results['bplus_search']], 'o-', label='B+ Tree')
     plt.plot(sizes, [t*1000 for t in results['brute_search']], 's-', label='Brute')
-    plt.title('Search Time'); plt.xlabel('Records'); plt.ylabel('ms'); plt.legend(); plt.grid(True)
-    plt.subplot(2,2,3)
+    plt.title('Search Time'); plt.xlabel('Records'); plt.ylabel('Time (ms)'); plt.legend(); plt.grid(True)
+
+    # Plot 3: Deletion Time
+    plt.subplot(3, 2, 3)
     plt.plot(sizes, [t*1000 for t in results['bplus_delete']], 'o-', label='B+ Tree')
     plt.plot(sizes, [t*1000 for t in results['brute_delete']], 's-', label='Brute')
-    plt.title('Deletion Time'); plt.xlabel('Records'); plt.ylabel('ms'); plt.legend(); plt.grid(True)
-    plt.subplot(2,2,4)
+    plt.title('Deletion Time'); plt.xlabel('Records'); plt.ylabel('Time (ms)'); plt.legend(); plt.grid(True)
+
+    # Plot 4: Range Query Time
+    plt.subplot(3, 2, 4)
     plt.plot(sizes, [t*1000 for t in results['bplus_range']], 'o-', label='B+ Tree')
     plt.plot(sizes, [t*1000 for t in results['brute_range']], 's-', label='Brute')
-    plt.title('Range Query Time'); plt.xlabel('Records'); plt.ylabel('ms'); plt.legend(); plt.grid(True)
+    plt.title('Range Query Time'); plt.xlabel('Records'); plt.ylabel('Time (ms)'); plt.legend(); plt.grid(True)
+
+    # Plot 5: Random Operations Time
+    plt.subplot(3, 2, 5)
+    plt.plot(sizes, [t*1000 for t in results['bplus_random']], 'o-', label='B+ Tree')
+    plt.plot(sizes, [t*1000 for t in results['brute_random']], 's-', label='Brute')
+    plt.title('Random Operations Time'); plt.xlabel('Records'); plt.ylabel('Time (ms)'); plt.legend(); plt.grid(True)
+
     plt.tight_layout()
     cmp_file = os.path.join(out_dir, 'performance_comparison.png')
     plt.savefig(cmp_file); plt.close()

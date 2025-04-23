@@ -143,9 +143,11 @@ def run_performance_comparison():
     try:
         os.makedirs("visualizations", exist_ok=True)
         
-        # Plot metrics for multiple set sizes
-        plt.figure(figsize=(10, 8))
-        plt.subplot(2, 2, 1)
+        # Plot metrics for multiple set sizes (using a 3x2 grid)
+        plt.figure(figsize=(12, 10)) # Adjusted size for 3x2 layout
+        
+        # Plot 1: Insertion Time
+        plt.subplot(3, 2, 1)
         plt.plot(results['sizes'], [t*1000 for t in results['bplus_insert']], 'o-', label='B+ Tree')
         plt.plot(results['sizes'], [t*1000 for t in results['brute_insert']], 's-', label='Brute Force')
         plt.title('Insertion Time')
@@ -154,7 +156,8 @@ def run_performance_comparison():
         plt.legend()
         plt.grid(True)
         
-        plt.subplot(2, 2, 2)
+        # Plot 2: Search Time
+        plt.subplot(3, 2, 2)
         plt.plot(results['sizes'], [t*1000 for t in results['bplus_search']], 'o-', label='B+ Tree')
         plt.plot(results['sizes'], [t*1000 for t in results['brute_search']], 's-', label='Brute Force')
         plt.title('Search Time')
@@ -163,7 +166,8 @@ def run_performance_comparison():
         plt.legend()
         plt.grid(True)
         
-        plt.subplot(2, 2, 3)
+        # Plot 3: Deletion Time
+        plt.subplot(3, 2, 3)
         plt.plot(results['sizes'], [t*1000 for t in results['bplus_delete']], 'o-', label='B+ Tree')
         plt.plot(results['sizes'], [t*1000 for t in results['brute_delete']], 's-', label='Brute Force')
         plt.title('Deletion Time')
@@ -172,10 +176,21 @@ def run_performance_comparison():
         plt.legend()
         plt.grid(True)
         
-        plt.subplot(2, 2, 4)
+        # Plot 4: Range Query Time
+        plt.subplot(3, 2, 4)
         plt.plot(results['sizes'], [t*1000 for t in results['bplus_range']], 'o-', label='B+ Tree')
         plt.plot(results['sizes'], [t*1000 for t in results['brute_range']], 's-', label='Brute Force')
         plt.title('Range Query Time')
+        plt.xlabel('Number of Records')
+        plt.ylabel('Time (ms)')
+        plt.legend()
+        plt.grid(True)
+        
+        # Plot 5: Random Operations Time
+        plt.subplot(3, 2, 5)
+        plt.plot(results['sizes'], [t*1000 for t in results['bplus_random']], 'o-', label='B+ Tree')
+        plt.plot(results['sizes'], [t*1000 for t in results['brute_random']], 's-', label='Brute Force')
+        plt.title('Random Operations Time')
         plt.xlabel('Number of Records')
         plt.ylabel('Time (ms)')
         plt.legend()
@@ -228,6 +243,12 @@ def run_performance_comparison():
                 'bplus': results['bplus_memory'][-1] / 1024,
                 'brute': results['brute_memory'][-1] / 1024,
                 'filename': 'memory_usage'
+            },
+            {
+                'name': 'Random Ops Time (ms)',
+                'bplus': results['bplus_random'][-1] * 1000,
+                'brute': results['brute_random'][-1] * 1000,
+                'filename': 'random_ops_time' # New filename for this bar chart
             }
         ]
         
@@ -270,85 +291,6 @@ def run_performance_comparison():
     except Exception as e:
         print(f"Error generating performance comparison charts: {e}")
 
-    # Random operations performance test
-    print("\n=== Testing Random Operations Performance ===")
-    
-    # Set up data structures
-    data_size = 1000
-    bplus_tree = BPlusTree(order=10)
-    brute_force = BruteForceDB()
-    
-    # Fill with initial data
-    keys = list(range(data_size))
-    values = [f"value_{k}" for k in keys]
-    
-    for i, key in enumerate(keys[:data_size//2]):
-        bplus_tree.insert(key, values[i])
-        brute_force.insert(key, values[i])
-    
-    # Random operations
-    num_operations = 500
-    operations = []
-    for _ in range(num_operations):
-        op = random.choice(['insert', 'search', 'delete'])
-        if op == 'insert':
-            key = random.randint(data_size//2, data_size-1)
-            operations.append(('insert', key, f"value_{key}"))
-        else:
-            key = random.randint(0, data_size//2-1)
-            operations.append((op, key))
-    
-    # Test B+ Tree
-    start_time = time.time()
-    for op in operations:
-        if op[0] == 'insert':
-            bplus_tree.insert(op[1], op[2])
-        elif op[0] == 'search':
-            bplus_tree.search(op[1])
-        elif op[0] == 'delete':
-            bplus_tree.delete(op[1])
-    bplus_random_time = time.time() - start_time
-    
-    # Test Brute Force
-    start_time = time.time()
-    for op in operations:
-        if op[0] == 'insert':
-            brute_force.insert(op[1], op[2])
-        elif op[0] == 'search':
-            brute_force.search(op[1])
-        elif op[0] == 'delete':
-            brute_force.delete(op[1])
-    brute_random_time = time.time() - start_time
-    
-    print(f"B+ Tree random operations time: {bplus_random_time:.6f} seconds")
-    print(f"Brute Force random operations time: {brute_random_time:.6f} seconds")
-    
-    # Create bar chart for random operations
-    plt.figure(figsize=(8, 5))
-    bars = plt.bar(['B+ Tree', 'Brute Force'], 
-                  [bplus_random_time * 1000, brute_random_time * 1000],
-                  color=['#1f77b4', '#ff7f0e'],
-                  width=0.6)
-    
-    # Add value labels
-    for bar in bars:
-        height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2., 
-                height * 1.02,
-                f'{height:.4f}',
-                ha='center', va='bottom', fontsize=10)
-    
-    plt.title('Random Operations Performance: B+ Tree vs Brute Force')
-    plt.ylabel('Time (ms)')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    
-    # Save figure
-    filename = "visualizations/random_operations.png"
-    plt.savefig(filename)
-    print(f"Saved {filename}")
-    
-    plt.close()
-
 def main():
     """Main function to run the demo script."""
     
@@ -365,7 +307,7 @@ def main():
 
     # Run performance comparisons
     run_performance_comparison()
-
+    
     print("\nDemonstration completed successfully!")
     print("B+ Tree visualizations have been saved in the 'visualizations' directory.")
 
